@@ -84,7 +84,7 @@ async def main():
         # Run the main application loop and keep it running until interrupted
         trading_task = asyncio.create_task(run_trading_loop(config))
 
-        # Wait for the trading loop to complete (which normally won't happen unless there's an error or cancellation)
+        # Wait for the trading loop to complete (on error or cancellation)
         await trading_task
 
         return 0
@@ -103,4 +103,5 @@ if __name__ == "__main__":
     # This ensures we still return the right exit code to the OS
     if exit_code:
         import sys
+
         sys.exit(exit_code)

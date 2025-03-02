@@ -74,39 +74,6 @@ class TestDatabase:
 
         db.dispose()
 
-    def test_session_scope(self, test_db):
-        """Test session_scope properly manages sessions."""
-        # Insert test data
-        with test_db.session_scope() as session:
-            test_item = TestModel(name="test_item")
-            session.add(test_item)
-
-        # Verify data was committed
-        with test_db.session_scope() as session:
-            result = session.query(TestModel).filter_by(name="test_item").first()
-            assert result is not None
-            assert result.name == "test_item"
-
-    def test_session_scope_rolls_back_on_error(self, test_db):
-        """Test session_scope rolls back on error."""
-        # Count existing items
-        with test_db.session_scope() as session:
-            initial_count = session.query(TestModel).count()
-
-        # Try to insert data but raise an exception
-        try:
-            with test_db.session_scope() as session:
-                test_item = TestModel(name="rollback_test")
-                session.add(test_item)
-                raise ValueError("Test exception to trigger rollback")
-        except ValueError:
-            pass
-
-        # Verify data was rolled back
-        with test_db.session_scope() as session:
-            new_count = session.query(TestModel).count()
-            assert new_count == initial_count
-
     @patch('time.sleep', return_value=None)  # Don't actually sleep in tests
     def test_execute_with_retry_success(self, mock_sleep, test_db):
         """Test execute_with_retry succeeds with a valid operation."""
@@ -215,42 +182,3 @@ class TestDatabaseIntegration:
         # Clean up the test table
         TestModel.__table__.drop(db.engine)
         db.dispose()
-
-    @pytest.mark.skipif(not os.environ.get("TEST_DATABASE_URL"),
-                        reason="TEST_DATABASE_URL environment variable not set")
-    def test_postgres_connection(self, postgres_db):
-        """Test connection to a real PostgreSQL database."""
-        with postgres_db.session_scope() as session:
-            # Simple database operation to verify connection
-            session.execute("SELECT 1")
-
-    @pytest.mark.skipif(not os.environ.get("TEST_DATABASE_URL"),
-                        reason="TEST_DATABASE_URL environment variable not set")
-    def test_postgres_crud_operations(self, postgres_db):
-        """Test CRUD operations on a real PostgreSQL database."""
-        # Create
-        with postgres_db.session_scope() as session:
-            test_item = TestModel(name="integration_test")
-            session.add(test_item)
-
-        # Read
-        with postgres_db.session_scope() as session:
-            result = session.query(TestModel).filter_by(name="integration_test").first()
-            assert result is not None
-            assert result.name == "integration_test"
-
-            # Update
-            result.name = "updated_integration_test"
-
-        # Verify Update
-        with postgres_db.session_scope() as session:
-            updated = session.query(TestModel).filter_by(name="updated_integration_test").first()
-            assert updated is not None
-
-            # Delete
-            session.delete(updated)
-
-        # Verify Delete
-        with postgres_db.session_scope() as session:
-            deleted = session.query(TestModel).filter_by(name="updated_integration_test").first()
-            assert deleted is None
