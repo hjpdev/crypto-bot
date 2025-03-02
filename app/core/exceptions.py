@@ -22,8 +22,20 @@ class ExchangeError(CryptoBotError):
     pass
 
 
+class ExchangeConnectionError(ExchangeError):
+    """Raised when there's a connection error with the exchange API."""
+
+    pass
+
+
 class DatabaseError(CryptoBotError):
     """Raised when there's a database-related error."""
+
+    pass
+
+
+class DatabaseConnectionError(DatabaseError):
+    """Raised when there's an error connecting to the database."""
 
     pass
 

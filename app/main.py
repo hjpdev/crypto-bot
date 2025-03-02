@@ -1,5 +1,5 @@
 import argparse
-import sys
+import asyncio
 from pathlib import Path
 
 from app.config import Config
@@ -27,7 +27,33 @@ def setup_database():
     logger.info("Database setup complete.")
 
 
-def main():
+async def run_trading_loop(config):
+    """
+    Main trading loop that keeps the application running.
+    This is where you would implement the core trading logic.
+    """
+    logger.info("Starting main trading loop...")
+
+    try:
+        while True:
+            # This is where you would implement your trading logic
+            # For example:
+            # - Fetch market data
+            # - Run strategy calculations
+            # - Execute trades if signals are generated
+            # - Log performance metrics
+
+            # For now, we just sleep to keep the loop running
+            logger.debug("Trading loop cycle...")
+            await asyncio.sleep(60)  # Sleep for 60 seconds between cycles
+    except asyncio.CancelledError:
+        logger.info("Trading loop was cancelled")
+    except Exception as e:
+        logger.exception(f"Error in trading loop: {e}")
+        raise
+
+
+async def main():
     args = parse_args()
 
     if args.debug:
@@ -55,8 +81,11 @@ def main():
 
         logger.info("Crypto Trading Bot started")
 
-        # Add main application loop here
-        # ...
+        # Run the main application loop and keep it running until interrupted
+        trading_task = asyncio.create_task(run_trading_loop(config))
+
+        # Wait for the trading loop to complete (which normally won't happen unless there's an error or cancellation)
+        await trading_task
 
         return 0
 
@@ -70,4 +99,8 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    exit_code = asyncio.run(main())
+    # This ensures we still return the right exit code to the OS
+    if exit_code:
+        import sys
+        sys.exit(exit_code)

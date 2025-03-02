@@ -1,11 +1,12 @@
 import re
-from typing import Dict, Any, List, Optional, Union, Callable
+from typing import Dict, Any, List, Optional, Callable
 from app.core.exceptions import ConfigError
 
 
 # Schema types and validators
 class ConfigSchemaType:
     """Base class for configuration schema types"""
+
     def __init__(self, required: bool = True, default: Any = None):
         self.required = required
         self.default = default
@@ -33,13 +34,14 @@ class ConfigSchemaType:
 
 class StringType(ConfigSchemaType):
     """String configuration type"""
+
     def __init__(
         self,
         required: bool = True,
         default: Optional[str] = None,
         min_length: Optional[int] = None,
         max_length: Optional[int] = None,
-        regex: Optional[str] = None
+        regex: Optional[str] = None,
     ):
         super().__init__(required, default)
         self.min_length = min_length
@@ -68,12 +70,13 @@ class StringType(ConfigSchemaType):
 
 class IntegerType(ConfigSchemaType):
     """Integer configuration type"""
+
     def __init__(
         self,
         required: bool = True,
         default: Optional[int] = None,
         min_value: Optional[int] = None,
-        max_value: Optional[int] = None
+        max_value: Optional[int] = None,
     ):
         super().__init__(required, default)
         self.min_value = min_value
@@ -98,12 +101,13 @@ class IntegerType(ConfigSchemaType):
 
 class FloatType(ConfigSchemaType):
     """Float configuration type"""
+
     def __init__(
         self,
         required: bool = True,
         default: Optional[float] = None,
         min_value: Optional[float] = None,
-        max_value: Optional[float] = None
+        max_value: Optional[float] = None,
     ):
         super().__init__(required, default)
         self.min_value = min_value
@@ -130,6 +134,7 @@ class FloatType(ConfigSchemaType):
 
 class BooleanType(ConfigSchemaType):
     """Boolean configuration type"""
+
     def validate(self, value: Any, path: str) -> bool:
         value = super().validate(value, path)
         if value is None:
@@ -143,13 +148,14 @@ class BooleanType(ConfigSchemaType):
 
 class ListType(ConfigSchemaType):
     """List configuration type"""
+
     def __init__(
         self,
         item_type: ConfigSchemaType,
         required: bool = True,
         default: Optional[List[Any]] = None,
         min_length: Optional[int] = None,
-        max_length: Optional[int] = None
+        max_length: Optional[int] = None,
     ):
         super().__init__(required, default if default is not None else [])
         self.item_type = item_type
@@ -181,12 +187,13 @@ class ListType(ConfigSchemaType):
 
 class DictType(ConfigSchemaType):
     """Dictionary configuration type"""
+
     def __init__(
         self,
         schema: Dict[str, ConfigSchemaType],
         required: bool = True,
         default: Optional[Dict[str, Any]] = None,
-        additional_properties: bool = False
+        additional_properties: bool = False,
     ):
         super().__init__(required, default if default is not None else {})
         self.schema = schema
@@ -229,12 +236,8 @@ class DictType(ConfigSchemaType):
 
 class EnumType(ConfigSchemaType):
     """Enumeration configuration type"""
-    def __init__(
-        self,
-        values: List[Any],
-        required: bool = True,
-        default: Any = None
-    ):
+
+    def __init__(self, values: List[Any], required: bool = True, default: Any = None):
         super().__init__(required, default)
         self.values = values
 
@@ -252,11 +255,12 @@ class EnumType(ConfigSchemaType):
 
 class AnyType(ConfigSchemaType):
     """Any type configuration type (for values with custom validation)"""
+
     def __init__(
         self,
         validator: Optional[Callable[[Any, str], Any]] = None,
         required: bool = True,
-        default: Any = None
+        default: Any = None,
     ):
         super().__init__(required, default)
         self.validator = validator
@@ -275,58 +279,98 @@ class AnyType(ConfigSchemaType):
         return value
 
 
+def timeframe_schema(required: bool = True) -> EnumType:
+    return EnumType(
+        [
+            "1m",
+            "3m",
+            "5m",
+            "15m",
+            "30m",
+            "1h",
+            "2h",
+            "4h",
+            "6h",
+            "8h",
+            "12h",
+            "1d",
+            "3d",
+            "1w",
+            "1M",
+        ],
+        required=required,
+    )
 
-timeframe_schema = lambda required=True: EnumType(
-    ["1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "6h", "8h", "12h", "1d", "3d", "1w", "1M"],
-    required=required
+
+app_schema = DictType(
+    {
+        "name": StringType(required=True),
+        "log_level": EnumType(
+            ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], required=False, default="INFO"
+        ),
+        "strategy": StringType(required=True),
+    }
 )
-
-app_schema = DictType({
-    "name": StringType(required=True),
-    "log_level": EnumType(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], required=False, default="INFO"),
-    "strategy": StringType(required=True),
-})
 
 exchanges_schema = DictType({}, additional_properties=True)  # Dynamic keys for exchanges
 
-data_collection_schema = DictType({
-    "symbol_match_patterns": ListType(StringType(), required=True, min_length=1),
-    "symbol_exclude_patterns": ListType(StringType(), required=True, min_length=1),
-    "enabled": BooleanType(required=False, default=True),
-    "interval": IntegerType(required=False, default=60, min_value=1),
-    "timeframes": ListType(timeframe_schema(), required=True, min_length=1)
-})
+data_collection_schema = DictType(
+    {
+        "symbol_match_patterns": ListType(StringType(), required=True, min_length=1),
+        "symbol_exclude_patterns": ListType(StringType(), required=True, min_length=1),
+        "enabled": BooleanType(required=False, default=True),
+        "interval": IntegerType(required=False, default=60, min_value=1),
+        "timeframes": ListType(timeframe_schema(), required=True, min_length=1),
+    }
+)
 
-entry_conditions_schema = ListType(DictType({
-    "indicator": StringType(required=True),
-    "value": FloatType(required=True),
-    "operator": StringType(required=True),
-    "timeframe": timeframe_schema(required=False),
-}), required=True, min_length=1)
+entry_conditions_schema = ListType(
+    DictType(
+        {
+            "indicator": StringType(required=True),
+            "value": FloatType(required=True),
+            "operator": StringType(required=True),
+            "timeframe": timeframe_schema(required=False),
+        }
+    ),
+    required=True,
+    min_length=1,
+)
 
-exit_conditions_schema = ListType(DictType({
-    "indicator": StringType(required=True),
-    "value": FloatType(required=True),
-    "operator": StringType(required=True),
-    "timeframe": timeframe_schema(required=False),
-}), required=True, min_length=1)
+exit_conditions_schema = ListType(
+    DictType(
+        {
+            "indicator": StringType(required=True),
+            "value": FloatType(required=True),
+            "operator": StringType(required=True),
+            "timeframe": timeframe_schema(required=False),
+        }
+    ),
+    required=True,
+    min_length=1,
+)
 
-position_management_schema = DictType({
-    "stake_amount": FloatType(required=True),
-    "max_drawdown_percent": FloatType(required=True),
-    "stop_loss_percent": FloatType(required=True),
-    "trailing_stop": BooleanType(required=True),
-    "trailing_stop_percent": FloatType(required=True),
-})
+position_management_schema = DictType(
+    {
+        "stake_amount": FloatType(required=True),
+        "max_drawdown_percent": FloatType(required=True),
+        "stop_loss_percent": FloatType(required=True),
+        "trailing_stop": BooleanType(required=True),
+        "trailing_stop_percent": FloatType(required=True),
+    }
+)
 
-root_schema = DictType({
-    "app": app_schema,
-    "exchanges": exchanges_schema,
-    "data_collection": data_collection_schema,
-    "entry_conditions": entry_conditions_schema,
-    "exit_conditions": exit_conditions_schema,
-    "position_management": position_management_schema
-}, required=True)
+root_schema = DictType(
+    {
+        "app": app_schema,
+        "exchanges": exchanges_schema,
+        "data_collection": data_collection_schema,
+        "entry_conditions": entry_conditions_schema,
+        "exit_conditions": exit_conditions_schema,
+        "position_management": position_management_schema,
+    },
+    required=True,
+)
 
 
 def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -337,20 +381,26 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
     except Exception as e:
         raise ConfigError(f"Unexpected error during configuration validation: {str(e)}")
 
+
 def validate_app_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return app_schema.validate(config, "app")
+
 
 def validate_exchanges_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return exchanges_schema.validate(config, "exchanges")
 
+
 def validate_data_collection_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return data_collection_schema.validate(config, "data_collection")
+
 
 def validate_entry_conditions_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return entry_conditions_schema.validate(config, "entry_conditions")
 
+
 def validate_exit_conditions_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return exit_conditions_schema.validate(config, "exit_conditions")
+
 
 def validate_position_management_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return position_management_schema.validate(config, "position_management")

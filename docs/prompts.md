@@ -208,7 +208,6 @@ Let's implement the database connection management using SQLAlchemy:
 2. Create app/core/exceptions.py with:
    - Custom exception classes for:
      - DatabaseConnectionError: For connection issues
-     - ConfigurationError: For configuration problems
      - ExchangeConnectionError: For exchange API issues
      - ValidationError: For data validation failures
 

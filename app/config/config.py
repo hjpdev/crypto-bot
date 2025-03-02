@@ -3,10 +3,11 @@ import yaml
 import json
 import threading
 from app.config.validation import validate_config
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional
 from pathlib import Path
 from app.core.exceptions import ConfigError
 from app.utils.logger import logger
+
 
 class Config:
     """
@@ -16,6 +17,7 @@ class Config:
     Usage:
         config = Config.get_instance()
     """
+
     _instance = None
     _lock = threading.Lock()
 
@@ -36,7 +38,7 @@ class Config:
         self.load_config()
 
     @classmethod
-    def get_instance(cls, config_path: Optional[str] = None) -> 'Config':
+    def get_instance(cls, config_path: Optional[str] = None) -> "Config":
         """Get or create the singleton instance of Config."""
         if cls._instance is None:
             return cls(config_path)
@@ -69,7 +71,7 @@ class Config:
 
     def get_nested(self, path: str, default: Any = None) -> Any:
         """Get a nested configuration value using dot notation."""
-        keys = path.split('.')
+        keys = path.split(".")
         value = self.config
 
         for key in keys:

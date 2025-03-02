@@ -2,7 +2,6 @@ import os
 import pytest
 import tempfile
 import yaml
-from pathlib import Path
 from typing import Dict, Any
 
 from app.config.config import Config
@@ -74,7 +73,7 @@ def config_file(valid_config_dict):
 
 
 @pytest.fixture
-def config_instance(config_file = 'tests/test_config.yaml'):
+def config_instance(config_file='tests/test_config.yaml'):
     """Create a Config instance with the test config file."""
     Config._instance = None
 
@@ -130,6 +129,7 @@ class TestConfigClass:
 
         partially_invalid = config_instance.get_nested("database.non_existent", "default_value")
         assert partially_invalid == "default_value"
+
 
 class TestConfigValidation:
     """Tests for configuration validation functionality."""
