@@ -1,0 +1,15 @@
+sqlalchemy==2.0.38
+alembic==1.14.1
+ccxt==4.1.87
+pyyaml==6.0.1
+python-dotenv==1.0.1
+pandas==2.2.1
+pandas-ta==0.3.14b0
+numpy==1.24.1
+psycopg2-binary==2.9.9
+
+# Testing dependencies
+pytest==7.4.0
+pytest-mock-resources[postgres]>=2.5.0
+black==23.9.1
+flake8==6.1.0
