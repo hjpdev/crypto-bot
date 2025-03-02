@@ -43,7 +43,7 @@ def main():
             return 1
 
         logger.info(f"Loading configuration from {config_path}")
-        config = Config(str(config_path))
+        config = Config().get_instance()
         logger.info(f"Configuration loaded: {config.__repr__()}")
 
         if args.setup_db:

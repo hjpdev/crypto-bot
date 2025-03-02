@@ -86,7 +86,7 @@ Now let's create configuration files for code quality tools and set up the devel
 
 Make sure the configuration files are in the appropriate locations and follow best practices for a Python project.
 
-## Prompt 3: Docker Setup for Database
+## Prompt 3: Docker Setup for Database - Note, skipped this.
 
 Now, let's create Docker configuration files for the PostgreSQL database service:
 

@@ -1,0 +1,67 @@
+app:
+  name: "Crypto Trading Bot"
+  log_level: "INFO"
+  strategy: "momentum"
+
+exchanges:
+  kraken:
+    enabled: true
+    base_url: "https://api.kraken.com"
+    api_key: "YOUR_API_KEY"
+    api_secret: "YOUR_API_SECRET"
+    test_mode: true
+
+data_collection:
+  symbol_match_patterns:
+    - "/USD"
+    - "/USDT"
+  symbol_exclude_patterns:
+    - ".d"
+    - "BULL"
+    - "BEAR"
+    - "UP"
+    - "DOWN"
+  enabled: true
+  interval: 60  # Seconds
+  timeframes:
+    - "1m"
+    - "5m"
+    - "15m"
+    - "1h"
+    - "4h"
+    - "1d"
+
+entry_conditions:
+  - indicator: rsi
+    value: 30
+    operator: "<"
+    timeframe: "1h"
+  - indicator: macd
+    value: 0
+    operator: ">"
+    timeframe: "1h"
+  - indicator: bollinger_bands
+    value: 20
+    operator: "<"
+    timeframe: "1h"
+
+exit_conditions:
+  - indicator: rsi
+    value: 70
+    operator: ">"
+    timeframe: "1h"
+  - indicator: macd
+    value: 0
+    operator: "<"
+    timeframe: "1h"
+  - indicator: bollinger_bands
+    value: 20
+    operator: "<"
+    timeframe: "1h"
+
+position_management:
+  stake_amount: 100
+  max_drawdown_percent: 5
+  stop_loss_percent: 2.5
+  trailing_stop: true
+  trailing_stop_percent: 1.0
