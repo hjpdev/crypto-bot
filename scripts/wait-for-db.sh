@@ -3,11 +3,10 @@
 
 set -e
 
-# host="db"
-host="localhost"
-port="5432"
+host="$POSTGRES_HOST"
+port="$POSTGRES_PORT"
 
-until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$host" -U "postgres" -d "crypto_trader" -c '\q'; do
+until PGPASSWORD=$POSTGRES_PASSWORD psql -h "$host" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c '\q'; do
   >&2 echo "Postgres is unavailable - sleeping"
   sleep 1
 done

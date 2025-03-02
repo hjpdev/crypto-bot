@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  app:
+    volumes:
+      - .:/app
+    environment:
+      - LOG_LEVEL=DEBUG
+      - PYTHONPATH=/app
+    command: ["python", "-m", "app.main", "--debug"]
+
+  db:
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./data/exports:/data/exports
+
+volumes:
+  postgres_data:

@@ -13,7 +13,6 @@ DEFAULT_DATABASE_URL = os.environ.get(
     "DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/crypto_trader"
 )
 
-
 class Database:
     def __init__(self, database_url: Optional[str] = None):
         self.database_url = database_url or os.getenv("DATABASE_URL", DEFAULT_DATABASE_URL)

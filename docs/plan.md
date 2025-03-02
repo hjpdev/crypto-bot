@@ -378,9 +378,3 @@ Now let's break down these phases into more granular, incremental steps that can
     - Perform comprehensive system testing
     - Add performance benchmarking
     - Create final documentation updates
-
-## LLM Prompts for Test-Driven Implementation
-
-The following sections provide prompts for a code-generation LLM to implement each step in a test-driven manner. Each prompt builds on previous prompts and ensures incremental progress with thorough testing.
-
-
