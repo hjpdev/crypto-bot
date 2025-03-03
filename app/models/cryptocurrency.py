@@ -38,9 +38,15 @@ class Cryptocurrency(BaseModel):
     # We'll add proper foreign keys when implementing or updating the related models
 
     # Relationships will be created when the related models are updated with foreign keys
-    # market_data = relationship("OHLCV", back_populates="cryptocurrency", cascade="all, delete-orphan")
-    # simulated_trades = relationship("Trade", back_populates="cryptocurrency", cascade="all, delete-orphan")
-    # market_snapshots = relationship("MarketSnapshot", back_populates="cryptocurrency", cascade="all, delete-orphan")
+    market_data = relationship(
+        "OHLCV", back_populates="cryptocurrency", cascade="all, delete-orphan"
+    )
+    # simulated_trades =
+    #   relationship("Trade", back_populates="cryptocurrency", cascade="all, delete-orphan")
+    # market_snapshots =
+    #   relationship(
+    #       "MarketSnapshot", back_populates="cryptocurrency", cascade="all, delete-orphan"
+    #   )
 
     __table_args__ = (UniqueConstraint("symbol", name="uix_crypto_symbol"),)
 

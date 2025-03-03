@@ -341,7 +341,6 @@ Let's implement the MarketData model for storing OHLCV data:
      - Class methods for:
        - get_latest(cryptocurrency_id, limit): Gets most recent data
        - get_range(cryptocurrency_id, start, end): Gets data in time range
-       - get_for_indicators(cryptocurrency_id, periods): Gets enough data to calculate indicators
 
 2. Update app/models/__init__.py to export the MarketData class
 
