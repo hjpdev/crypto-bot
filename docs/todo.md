@@ -50,14 +50,14 @@
 - [x] Create app/models/cryptocurrency.py with Cryptocurrency class
 - [x] Update app/models/__init__.py to export the class
 - [x] Create tests/test_cryptocurrency_model.py with unit tests
-## Market Data Model
-- [ ] Create app/models/market_data.py with MarketData class
-- [ ] Update app/models/__init__.py to export the class
-- [ ] Create tests/test_market_data_model.py with unit tests
-## SimulatedTrades and PartialExits Models
-- [ ] Create app/models/trades.py with SimulatedTrade and PartialExit classes
-- [ ] Update app/models/__init__.py to export both classes
-- [ ] Create tests/test_trade_models.py with unit tests
+## OHLCV Model
+- [x] Create app/models/ohlcv.py with OHLCV class
+- [x] Update app/models/__init__.py to export the class
+- [x] Create tests/test_ohlcv_model.py with unit tests
+## Position and PartialExits Models
+- [x] Create app/models/position.py with Position and PartialExit classes
+- [x] Update app/models/__init__.py to export both classes
+- [x] Create tests/test_position_models.py with unit tests
 ## Configuration and Performance Models
 - [ ] Create app/models/system.py with ConfigurationHistory and PerformanceMetrics classes
 - [ ] Update app/models/__init__.py to export both classes

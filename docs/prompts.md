@@ -9,7 +9,7 @@ crypto-bot/
 │   ├── __init__.py
 │   ├── config/
 │   │   ├── __init__.py
-│   │   └── config_loader.py      # YAML config loader
+│   │   └── config.py      # YAML config loader
 │   ├── core/
 │   │   ├── __init__.py
 │   │   ├── database.py           # SQLAlchemy setup
@@ -362,7 +362,7 @@ Let's implement the SimulatedTrades and PartialExits models:
      - cryptocurrency_id: Foreign key to Cryptocurrency
      - entry_timestamp: DateTime column
      - entry_price: Numeric column
-     - position_size: Numeric column
+     - size: Numeric column
      - position_type: Enum column (LONG/SHORT)
      - stop_loss_price: Numeric column
      - take_profit_price: Numeric column

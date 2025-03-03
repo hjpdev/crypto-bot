@@ -41,8 +41,9 @@ class Cryptocurrency(BaseModel):
     market_data = relationship(
         "OHLCV", back_populates="cryptocurrency", cascade="all, delete-orphan"
     )
-    # simulated_trades =
-    #   relationship("Trade", back_populates="cryptocurrency", cascade="all, delete-orphan")
+    positions = relationship(
+        "Position", back_populates="cryptocurrency", cascade="all, delete-orphan"
+    )
     # market_snapshots =
     #   relationship(
     #       "MarketSnapshot", back_populates="cryptocurrency", cascade="all, delete-orphan"

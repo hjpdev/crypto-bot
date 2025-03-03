@@ -1,6 +1,6 @@
 from .base_model import BaseModel
 from .ohlcv import OHLCV
-from .trade import Trade
 from .cryptocurrency import Cryptocurrency
+from .position import Position, PartialExit
 
-__all__ = ["BaseModel", "OHLCV", "Trade", "Cryptocurrency"]
+__all__ = ["BaseModel", "OHLCV", "Cryptocurrency", "Position", "PartialExit"]

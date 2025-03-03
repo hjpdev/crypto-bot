@@ -133,7 +133,7 @@ The database will consist of the following tables:
    - cryptocurrency_id (FK)
    - entry_timestamp
    - entry_price
-   - position_size
+   - size
    - position_type (long/short)
    - stop_loss_price
    - take_profit_price
