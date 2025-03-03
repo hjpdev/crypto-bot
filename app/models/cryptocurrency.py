@@ -44,10 +44,9 @@ class Cryptocurrency(BaseModel):
     positions = relationship(
         "Position", back_populates="cryptocurrency", cascade="all, delete-orphan"
     )
-    # market_snapshots =
-    #   relationship(
-    #       "MarketSnapshot", back_populates="cryptocurrency", cascade="all, delete-orphan"
-    #   )
+    market_snapshots = relationship(
+        "MarketSnapshot", back_populates="cryptocurrency", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (UniqueConstraint("symbol", name="uix_crypto_symbol"),)
 

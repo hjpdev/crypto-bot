@@ -48,6 +48,13 @@ class MockCryptocurrency(MockBaseModel):
         cascade="all, delete-orphan"
     )
 
+    # Define relationship to MarketSnapshot
+    market_snapshots = relationship(
+        "MockMarketSnapshot",
+        back_populates="cryptocurrency",
+        cascade="all, delete-orphan"
+    )
+
     __table_args__ = (
         UniqueConstraint("symbol", name="uix_crypto_symbol"),
         Index("ix_cryptocurrencies_active", "is_active"),
@@ -181,6 +188,103 @@ class MockOHLCV(MockBaseModel):
         return True
 
 
+class MockMarketSnapshot(MockBaseModel):
+    __tablename__ = "market_snapshots"
+
+    from sqlalchemy import (
+        Column, String, DateTime, Index, UniqueConstraint, JSON, ForeignKey, Numeric, Integer
+    )
+    from sqlalchemy.orm import relationship
+
+    cryptocurrency_id = Column(
+        Integer,
+        ForeignKey("cryptocurrencies.id"),
+        nullable=False,
+        index=True
+    )
+    symbol = Column(String(20), nullable=False, index=True)
+    timestamp = Column(DateTime, nullable=False, index=True)
+    ohlcv = Column(JSON, nullable=False)
+    indicators = Column(JSON, nullable=False)
+    order_book = Column(JSON, nullable=False)
+    trading_volume = Column(Numeric(precision=24, scale=8), nullable=False)
+    market_sentiment = Column(Numeric(precision=10, scale=2), nullable=True)
+    correlation_btc = Column(Numeric(precision=5, scale=4), nullable=True)
+
+    cryptocurrency = relationship("MockCryptocurrency", back_populates="market_snapshots")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "cryptocurrency_id", "timestamp", name="uix_market_snapshot_crypto_time"
+        ),
+    )
+
+    @property
+    def as_dict(self):
+        """Simplified version of the as_dict property for testing"""
+        return {
+            "id": self.id,
+            "cryptocurrency_id": self.cryptocurrency_id,
+            "symbol": self.symbol,
+            "timestamp": self.timestamp.isoformat(),
+            "ohlcv": self.ohlcv,
+            "indicators": self.indicators,
+            "order_book": self.order_book,
+            "trading_volume": float(self.trading_volume) if self.trading_volume else None,
+            "market_sentiment": float(self.market_sentiment) if self.market_sentiment else None,
+            "correlation_btc": float(self.correlation_btc) if self.correlation_btc else None,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+        }
+
+    @classmethod
+    def get_latest(cls, session, cryptocurrency_id):
+        """Mock of get_latest for testing"""
+        return (
+            session.query(cls)
+            .filter(cls.cryptocurrency_id == cryptocurrency_id)
+            .order_by(cls.timestamp.desc())
+            .first()
+        )
+
+    @classmethod
+    def get_range(cls, session, cryptocurrency_id, start, end):
+        """Mock of get_range for testing"""
+        # Ensure datetimes have timezone info if not provided
+        start = cls.ensure_timezone(start)
+        end = cls.ensure_timezone(end)
+
+        return (
+            session.query(cls)
+            .filter(cls.cryptocurrency_id == cryptocurrency_id)
+            .filter(cls.timestamp >= start)
+            .filter(cls.timestamp <= end)
+            .order_by(cls.timestamp)
+            .all()
+        )
+
+    @classmethod
+    def get_with_specific_indicator(cls, session, cryptocurrency_id, indicator):
+        """Mock of get_with_specific_indicator for testing"""
+        # For testing, we'll just check if the indicator exists as a key at the top level
+        # This is a simplification for the test environment
+        from sqlalchemy import text
+        return (
+            session.query(cls)
+            .filter(cls.cryptocurrency_id == cryptocurrency_id)
+            .filter(text(f"json_extract(indicators, '$.{indicator}') IS NOT NULL"))
+            .order_by(cls.timestamp.desc())
+            .all()
+        )
+
+    @staticmethod
+    def ensure_timezone(dt):
+        """Ensure datetime has timezone info"""
+        if dt.tzinfo is None:
+            return dt.replace(tzinfo=timezone.utc)
+        return dt
+
+
 @pytest.fixture(scope="session")
 def db_url():
     """Provide an in-memory SQLite database URL for testing."""
@@ -199,11 +303,15 @@ def db_engine(db_url):
     patch_base = mock.patch('app.models.base_model.Base', TestingBase)
     patch_crypto = mock.patch('app.models.cryptocurrency.Cryptocurrency', MockCryptocurrency)
     patch_ohlcv = mock.patch('app.models.ohlcv.OHLCV', MockOHLCV)
+    patch_market_snapshot = mock.patch(
+        'app.models.market_snapshot.MarketSnapshot', MockMarketSnapshot
+    )
 
     # Start the patches
     patch_base.start()
     patch_crypto.start()
     patch_ohlcv.start()
+    patch_market_snapshot.start()
 
     yield engine
 
@@ -214,6 +322,7 @@ def db_engine(db_url):
     patch_base.stop()
     patch_crypto.stop()
     patch_ohlcv.stop()
+    patch_market_snapshot.stop()
 
 
 @pytest.fixture(scope="function")
@@ -224,7 +333,8 @@ def db_session(db_engine):
 
     # Patch any imports of the actual models to use our mock models instead
     with mock.patch('app.models.cryptocurrency.Cryptocurrency', MockCryptocurrency), \
-         mock.patch('app.models.ohlcv.OHLCV', MockOHLCV):
+         mock.patch('app.models.ohlcv.OHLCV', MockOHLCV), \
+         mock.patch('app.models.market_snapshot.MarketSnapshot', MockMarketSnapshot):
         yield session
 
     session.rollback()

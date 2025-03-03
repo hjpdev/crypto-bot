@@ -59,13 +59,13 @@
 - [x] Update app/models/__init__.py to export both classes
 - [x] Create tests/test_position_models.py with unit tests
 ## Configuration and Performance Models
-- [ ] Create app/models/system.py with ConfigurationHistory and PerformanceMetrics classes
-- [ ] Update app/models/__init__.py to export both classes
-- [ ] Create tests/test_system_models.py with unit tests
+- [x] Create app/models/system.py with ConfigurationHistory and PerformanceMetrics classes
+- [x] Update app/models/__init__.py to export both classes
+- [x] Create tests/test_system_models.py with unit tests
 ## Market Snapshots Model
-- [ ] Create app/models/snapshots.py with MarketSnapshot class
-- [ ] Update app/models/__init__.py to export the class
-- [ ] Create tests/test_snapshot_model.py with unit tests
+- [x] Create app/models/snapshots.py with MarketSnapshot class
+- [x] Update app/models/__init__.py to export the class
+- [x] Create tests/test_snapshot_model.py with unit tests
 ## Exchange Service - Basic Setup
 - [ ] Create app/services/exchange_service.py with ExchangeService class
 - [ ] Create app/services/exchange_rate_limiter.py with RateLimiter class
