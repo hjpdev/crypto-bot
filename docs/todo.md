@@ -67,15 +67,15 @@
 - [x] Update app/models/__init__.py to export the class
 - [x] Create tests/test_snapshot_model.py with unit tests
 ## Exchange Service - Basic Setup
-- [ ] Create app/services/exchange_service.py with ExchangeService class
-- [ ] Create app/services/exchange_rate_limiter.py with RateLimiter class
-- [ ] Update app/services/__init__.py to export the service classes
-- [ ] Create tests/test_exchange_service.py with unit tests
+- [x] Create app/services/exchange_service.py with ExchangeService class
+- [x] Create app/services/exchange_rate_limiter.py with RateLimiter class
+- [x] Update app/services/__init__.py to export the service classes
+- [x] Create tests/test_exchange_service.py with unit tests
 ## Exchange Service - Data Fetching
-- [ ] Extend app/services/exchange_service.py with additional methods
-- [ ] Create app/services/data_normalization.py with normalization functions
-- [ ] Update tests for new functionality
-- [ ] Create scripts/fetch_market_data.py script
+- [x] Extend app/services/exchange_service.py with additional methods
+- [x] Create app/services/data_normalization.py with normalization functions
+- [x] Update tests for new functionality
+- [x] Create scripts/fetch_market_data.py script
 ## Exchange Service - Cryptocurrency Filtering
 - [ ] Create app/services/market_filter.py with MarketFilter class
 - [ ] Update app/services/exchange_service.py for integration
