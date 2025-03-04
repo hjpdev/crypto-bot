@@ -8,5 +8,21 @@ implementing trading strategies, and managing data.
 from app.services.exchange_service import ExchangeService
 from app.services.exchange_rate_limiter import RateLimiter
 from app.services.market_filter import MarketFilter
+from app.services.indicator_service import IndicatorService
+from app.services.data_preparation import (
+    ohlcv_to_dataframe,
+    prepare_for_indicators,
+    resample_ohlcv,
+    validate_ohlcv_data,
+)
 
-__all__ = ["ExchangeService", "RateLimiter", "MarketFilter"]
+__all__ = [
+    "ExchangeService",
+    "RateLimiter",
+    "MarketFilter",
+    "IndicatorService",
+    "ohlcv_to_dataframe",
+    "prepare_for_indicators",
+    "resample_ohlcv",
+    "validate_ohlcv_data",
+]

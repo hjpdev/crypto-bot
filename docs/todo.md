@@ -77,16 +77,16 @@
 - [x] Update tests for new functionality
 - [x] Create scripts/fetch_market_data.py script
 ## Exchange Service - Cryptocurrency Filtering
-- [ ] Create app/services/market_filter.py with MarketFilter class
-- [ ] Update app/services/exchange_service.py for integration
-- [ ] Create tests/test_market_filter.py with unit tests
-- [ ] Create scripts/list_filtered_markets.py script
+- [x] Create app/services/market_filter.py with MarketFilter class
+- [x] Update app/services/exchange_service.py for integration
+- [x] Create tests/test_market_filter.py with unit tests
+- [x] Create scripts/list_filtered_markets.py script
 ## Indicator Service - Basic Indicators
-- [ ] Create app/services/indicator_service.py with IndicatorService class
-- [ ] Create app/services/data_preparation.py with preparation functions
-- [ ] Update app/services/__init__.py to export new classes
-- [ ] Create tests/test_indicator_service.py with unit tests
-- [ ] Create tests/test_data_preparation.py with unit tests
+- [x] Create app/services/indicator_service.py with IndicatorService class
+- [x] Create app/services/data_preparation.py with preparation functions
+- [x] Update app/services/__init__.py to export new classes
+- [x] Create tests/test_indicator_service.py with unit tests
+- [x] Create tests/test_data_preparation.py with unit tests
 ## Indicator Service - Advanced Indicators
 - [ ] Enhance app/services/indicator_service.py with additional methods
 - [ ] Create app/services/indicator_utils.py with helper functions
