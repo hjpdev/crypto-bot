@@ -13,6 +13,7 @@ import math
 
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Union
+from datetime import datetime
 
 from app.services.exchange_rate_limiter import RateLimiter
 
@@ -149,6 +150,11 @@ class ExchangeService:
         self._symbol_metadata_cache: Dict[str, Dict[str, Any]] = {}
         self._symbol_metadata_cache_timestamp: Dict[str, float] = {}
 
+        self.market_filter = None  # Will be lazy-loaded when needed
+        self._filtered_symbols_cache = {}
+        self._filtered_symbols_timestamp = None
+        self._filtered_symbols_ttl = 300  # Default 5 minutes cache for filtered symbols
+
     def _initialize_exchange(self) -> ccxt.Exchange:
         if self.exchange_id not in ccxt.exchanges:
             raise ValueError(f"Exchange '{self.exchange_id}' is not supported by CCXT")
@@ -158,15 +164,11 @@ class ExchangeService:
         config: Dict[str, Any] = {
             "enableRateLimit": self.enableRateLimit,
             "timeout": self.timeout,
+            "apiKey": self.api_key,
+            "secret": self.secret,
+            "password": self.password,
             **self.exchange_kwargs,
         }
-
-        if self.api_key and self.secret:
-            config["apiKey"] = self.api_key
-            config["secret"] = self.secret
-
-            if self.password:
-                config["password"] = self.password
 
         exchange = exchange_class(config)
 
@@ -701,10 +703,10 @@ class ExchangeService:
         # Cannot convert to a smaller timeframe
         if source_ms > target_ms:
             raise ValueError(
-                f'''
+                f"""
                     Cannot convert from larger timeframe ({source_timeframe})
                     to smaller timeframe ({target_timeframe}).
-                '''
+                """
             )
 
         if not ohlcv_data:
@@ -821,3 +823,83 @@ class ExchangeService:
         # Close any active sessions
         if hasattr(self._exchange, "session") and hasattr(self._exchange.session, "close"):
             self._exchange.session.close()
+
+    def set_filter_cache_ttl(self, ttl: int) -> None:
+        """Set the TTL for the filtered symbols cache."""
+        logger.debug(f"Setting filtered symbols cache TTL to {ttl} seconds")
+        self._filtered_symbols_ttl = ttl
+
+    def _is_filter_cache_valid(self) -> bool:
+        """Check if the filtered symbols cache is still valid."""
+        if not self._filtered_symbols_timestamp:
+            return False
+
+        elapsed = (datetime.now() - self._filtered_symbols_timestamp).total_seconds()
+
+        return elapsed < self._filtered_symbols_ttl
+
+    def _get_market_filter(self):
+        """Lazy load the market filter."""
+        if self.market_filter is None:
+            from app.services.market_filter import MarketFilter
+
+            logger.debug(f"Initializing MarketFilter for {self.exchange_id}")
+            self.market_filter = MarketFilter(self)
+
+        return self.market_filter
+
+    def get_filtered_symbols(
+        self, filter_config: Dict[str, Any] = None, force_refresh: bool = False
+    ) -> List[str]:
+        """
+        Get symbols that pass all configured filters.
+
+        This method applies filters as configured in the filter_config. If not provided,
+        it will use any existing cached results.
+
+        Args:
+            filter_config: Configuration dictionary with filter criteria
+            force_refresh: Force refresh the data even if cache is valid
+
+        Returns:
+            List of symbols passing all filters
+        """
+        cache_key = str(filter_config) if filter_config else "default"
+
+        if (
+            not force_refresh
+            and self._is_filter_cache_valid()
+            and cache_key in self._filtered_symbols_cache
+        ):
+            logger.debug(f"Using cached filtered symbols for key '{cache_key}'")
+            return self._filtered_symbols_cache[cache_key]
+
+        logger.info(f"Fetching and filtering symbols for {self.exchange_id}")
+
+        try:
+            markets = self.fetch_markets()
+            all_symbols = [market["symbol"] for market in markets.values()]
+            logger.info(f"Found {len(all_symbols)} total symbols on {self.exchange_id}")
+        except Exception as e:
+            logger.error(f"Error fetching symbols: {str(e)}")
+            return []
+
+        if filter_config:
+            market_filter = self._get_market_filter()
+            filtered_symbols = market_filter.apply_all_filters(all_symbols, filter_config)
+        else:
+            filtered_symbols = all_symbols
+            logger.info(f"No filters applied, using all {len(all_symbols)} symbols")
+
+        self._filtered_symbols_cache[cache_key] = filtered_symbols
+        self._filtered_symbols_timestamp = datetime.now()
+
+        return filtered_symbols
+
+    def clear_filter_cache(self) -> None:
+        """
+        Clear the filtered symbols cache.
+        """
+        logger.debug("Clearing filtered symbols cache")
+        self._filtered_symbols_cache = {}
+        self._filtered_symbols_timestamp = None
