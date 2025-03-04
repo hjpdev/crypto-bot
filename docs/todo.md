@@ -88,10 +88,10 @@
 - [x] Create tests/test_indicator_service.py with unit tests
 - [x] Create tests/test_data_preparation.py with unit tests
 ## Indicator Service - Advanced Indicators
-- [ ] Enhance app/services/indicator_service.py with additional methods
-- [ ] Create app/services/indicator_utils.py with helper functions
-- [ ] Update tests for new functionality
-- [ ] Create scripts/calculate_indicators.py script
+- [x] Enhance app/services/indicator_service.py with additional methods
+- [x] Create app/services/indicator_utils.py with helper functions
+- [x] Update tests for new functionality
+- [x] Create scripts/calculate_indicators.py script
 
 # Phase 3: Strategy and Risk Management
 ## Strategy Framework
