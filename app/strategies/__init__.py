@@ -1,4 +1,5 @@
 from .base_strategy import BaseStrategy
+from .momentum_strategy import MomentumStrategy
 from .strategy_utils import (
     calculate_risk_reward_ratio,
     validate_signal,
@@ -12,6 +13,7 @@ from .strategy_utils import (
 
 __all__ = [
     "BaseStrategy",
+    "MomentumStrategy",
     "calculate_risk_reward_ratio",
     "validate_signal",
     "calculate_signal_strength",

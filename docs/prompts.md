@@ -719,7 +719,7 @@ Let's implement the momentum strategy:
      - Includes methods for:
        - _check_rsi_condition(data): Checks for RSI oversold/overbought
        - _check_macd_condition(data): Checks for MACD crossover/divergence
-       - _check_volume_confirmation(data): Confirms with volume
+       - _check_volume_confirmation(data, index): Confirms with volume comparison to average
        - _check_trend_alignment(data): Verifies trend direction
        - _calculate_signal_confidence(conditions): Quantifies signal confidence
        - _apply_filters(signal, market_data): Applies additional filters

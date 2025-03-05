@@ -95,17 +95,17 @@
 
 # Phase 3: Strategy and Risk Management
 ## Strategy Framework
-- [ ] Create app/strategies/base_strategy.py with BaseStrategy class
-- [ ] Create app/strategies/strategy_utils.py with utility functions
-- [ ] Create app/models/signals.py with Signal class
-- [ ] Update app/strategies/__init__.py to export classes and functions
-- [ ] Create tests/test_base_strategy.py with unit tests
-- [ ] Create tests/test_strategy_utils.py with unit tests
+- [x] Create app/strategies/base_strategy.py with BaseStrategy class
+- [x] Create app/strategies/strategy_utils.py with utility functions
+- [x] Create app/models/signals.py with Signal class
+- [x] Update app/strategies/__init__.py to export classes and functions
+- [x] Create tests/test_base_strategy.py with unit tests
+- [x] Create tests/test_strategy_utils.py with unit tests
 ## Momentum Strategy Implementation
-- [ ] Create app/strategies/momentum_strategy.py with MomentumStrategy class
-- [ ] Update app/strategies/__init__.py to export the class
-- [ ] Create tests/test_momentum_strategy.py with unit tests
-- [ ] Create scripts/test_momentum_strategy.py script
+- [x] Create app/strategies/momentum_strategy.py with MomentumStrategy class
+- [x] Update app/strategies/__init__.py to export the class
+- [x] Create tests/test_momentum_strategy.py with unit tests
+- [x] Create scripts/test_momentum_strategy.py script
 ## Risk Management Implementation
 - [ ] Create app/services/risk_manager.py with RiskManager class
 - [ ] Create app/services/portfolio_manager.py with PortfolioManager class
