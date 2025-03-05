@@ -15,12 +15,16 @@ from app.services.data_preparation import (
     resample_ohlcv,
     validate_ohlcv_data,
 )
+from app.services.risk_manager import RiskManager
+from app.services.portfolio_manager import PortfolioManager
 
 __all__ = [
     "ExchangeService",
     "RateLimiter",
     "MarketFilter",
     "IndicatorService",
+    "RiskManager",
+    "PortfolioManager",
     "ohlcv_to_dataframe",
     "prepare_for_indicators",
     "resample_ohlcv",

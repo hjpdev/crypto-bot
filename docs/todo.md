@@ -107,11 +107,11 @@
 - [x] Create tests/test_momentum_strategy.py with unit tests
 - [x] Create scripts/test_momentum_strategy.py script
 ## Risk Management Implementation
-- [ ] Create app/services/risk_manager.py with RiskManager class
-- [ ] Create app/services/portfolio_manager.py with PortfolioManager class
-- [ ] Update app/services/__init__.py to export new classes
-- [ ] Create tests/test_risk_manager.py with unit tests
-- [ ] Create tests/test_portfolio_manager.py with unit tests
+- [x] Create app/services/risk_manager.py with RiskManager class
+- [x] Create app/services/portfolio_manager.py with PortfolioManager class
+- [x] Update app/services/__init__.py to export new classes
+- [x] Create tests/test_risk_manager.py with unit tests
+- [x] Create tests/test_portfolio_manager.py with unit tests
 ## Market Analysis Implementation
 - [ ] Create app/services/market_analyzer.py with MarketAnalyzer class
 - [ ] Create app/services/market_sentiment.py with MarketSentiment class

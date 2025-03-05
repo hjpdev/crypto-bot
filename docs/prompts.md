@@ -880,3 +880,472 @@ Let's implement the opportunity scanner process:
    - Proper error handling and logging
 
 Ensure the process is efficient and handles all necessary tasks. Make sure it integrates well with the rest of the application. Use type hints and comprehensive docstrings throughout the code.
+
+## Prompt 24: Scheduled Tasks Implementation
+
+Let's implement a scheduled task system to handle periodic operations:
+
+1. Create app/core/scheduler.py with:
+   - A TaskScheduler class that:
+     - Manages periodic tasks with configurable intervals
+     - Uses asyncio or threading for concurrent execution
+     - Provides priority management for tasks
+     - Implements error handling and retry logic
+     - Methods for:
+       - add_task(task_func, interval, name, priority): Schedules a new task
+       - remove_task(name): Removes a scheduled task
+       - start(): Starts the scheduler
+       - stop(): Stops the scheduler gracefully
+       - pause_task(name): Temporarily pauses a task
+       - resume_task(name): Resumes a paused task
+       - get_task_status(name): Returns task status and statistics
+
+2. Create app/tasks/market_data_collector.py with:
+   - A MarketDataCollector class that:
+     - Collects OHLCV data for configured symbols
+     - Runs on a schedule via the TaskScheduler
+     - Handles error recovery and missed intervals
+     - Methods for:
+       - collect_data(symbols): Collects and stores market data
+       - update_cryptocurrency_metadata(): Updates metadata periodically
+       - run(): Main entry point for scheduled execution
+
+3. Create app/tasks/performance_calculator.py with:
+   - A PerformanceCalculator class that:
+     - Calculates performance metrics periodically
+     - Updates the PerformanceMetrics table
+     - Methods for:
+       - calculate_metrics(): Calculates current performance
+       - generate_report(): Generates a summary report
+       - run(): Main entry point for scheduled execution
+
+4. Update app/core/__init__.py and app/tasks/__init__.py to export the new classes
+
+5. Create tests/test_scheduler.py with:
+   - Tests for task scheduling functionality
+   - Tests for concurrent execution
+   - Tests for error handling and recovery
+
+6. Create tests/test_market_data_collector.py and tests/test_performance_calculator.py with:
+   - Tests for the collector and calculator classes
+   - Tests for integration with the scheduler
+   - Tests for error scenarios and recovery
+
+Make the scheduler flexible and robust, with proper error handling and logging. Use dependency injection for services. Include comprehensive monitoring of task health and performance. Use type hints and detailed docstrings throughout.
+
+## Prompt 25: Data Collection and Storage Implementation
+
+Let's implement comprehensive data collection and storage functionality:
+
+1. Create app/services/data_collector.py with:
+   - A DataCollector class that:
+     - Coordinates various data collection activities
+     - Manages data storage and organization
+     - Handles historical and real-time data
+     - Methods for:
+       - collect_ohlcv(symbols, timeframes, start_time, end_time): Collects OHLCV data
+       - collect_order_book(symbols, depth): Collects order book snapshots
+       - collect_market_snapshots(symbols): Creates comprehensive market snapshots
+       - backfill_missing_data(symbols, timeframe, start_time): Fills gaps in data
+       - validate_collected_data(data): Validates data integrity
+
+2. Create app/services/data_storage.py with:
+   - A DataStorage class that:
+     - Provides an abstraction layer for database operations
+     - Optimizes data storage for time series data
+     - Implements efficient bulk insert operations
+     - Methods for:
+       - store_ohlcv(symbol, timeframe, data): Stores OHLCV data
+       - store_indicator_values(symbol, timeframe, indicators): Stores calculated indicators
+       - store_market_snapshot(symbol, snapshot): Stores market snapshots
+       - bulk_insert(model_class, records): Performs efficient bulk inserts
+       - check_data_continuity(symbol, timeframe, start, end): Checks for data gaps
+
+3. Create app/tasks/data_integrity_checker.py with:
+   - A DataIntegrityChecker class that:
+     - Periodically checks for gaps in collected data
+     - Verifies data consistency
+     - Triggers backfill operations when needed
+     - Methods for:
+       - check_ohlcv_continuity(symbols, timeframe, lookback): Checks for continuous data
+       - verify_indicator_values(symbols): Verifies indicators are calculated
+       - run(): Main entry point for scheduled execution
+
+4. Create tests/test_data_collector.py, tests/test_data_storage.py, and tests/test_data_integrity_checker.py with:
+   - Tests for collection functionality
+   - Tests for storage operations
+   - Tests for integrity checking
+   - Tests for error handling and recovery
+
+5. Update existing service classes to use the new data storage abstraction
+
+Implement efficient data handling with proper error recovery. Use batch operations for database efficiency. Include comprehensive logging and monitoring. Use type hints and detailed docstrings throughout.
+
+## Prompt 26: Position Management Process Implementation
+
+Let's implement the position management process:
+
+1. Create app/services/position_manager.py with:
+   - A PositionManager class that:
+     - Manages simulated trading positions
+     - Tracks position status and performance
+     - Implements risk management rules
+     - Methods for:
+       - open_position(symbol, entry_price, size, position_type, strategy): Opens new position
+       - update_position(position_id, current_price): Updates position status and P/L
+       - close_position(position_id, exit_price, reason): Closes a position
+       - apply_partial_exit(position_id, exit_price, percentage): Applies a partial exit
+       - check_stop_loss(position, current_price): Checks if stop loss is triggered
+       - check_take_profit(position, current_price): Checks if take profit is triggered
+       - adjust_trailing_stop(position, current_price): Updates trailing stop if needed
+       - get_active_positions(): Returns all currently active positions
+       - get_position_performance(position_id): Returns detailed performance metrics
+
+2. Create app/processes/position_process.py with:
+   - A PositionProcess class that inherits from BaseProcess:
+     - Runs the position management logic on a schedule
+     - Coordinates with the PositionManager
+     - Implements error handling and recovery
+     - Methods for:
+       - process_active_positions(): Updates all active positions
+       - check_exit_conditions(): Checks for exit signals
+       - record_position_changes(): Records position updates to database
+       - run(): Main process execution method
+
+3. Create app/services/position_reporting.py with:
+   - A PositionReporting class that:
+     - Generates reports on position performance
+     - Calculates aggregate statistics
+     - Methods for:
+       - generate_position_summary(): Creates a summary of current positions
+       - calculate_daily_pnl(): Calculates daily profit/loss
+       - generate_performance_report(): Creates detailed performance report
+
+4. Create tests/test_position_manager.py, tests/test_position_process.py, and tests/test_position_reporting.py with:
+   - Tests for position management functionality
+   - Tests for process execution
+   - Tests for reporting accuracy
+   - Tests for risk management rule application
+   - Tests for error handling and recovery
+
+5. Update app/core/__init__.py and app/processes/__init__.py to export the new classes
+
+Implement comprehensive logging of position changes. Make sure risk management rules are properly applied. Use dependency injection for services and configuration. Include proper error handling and recovery. Use type hints and detailed docstrings throughout.
+
+## Prompt 27: Main Application Implementation
+
+Let's implement the main application that orchestrates all processes:
+
+1. Create app/main.py with:
+   - Main application class and entry point
+   - Process orchestration and management
+   - Configuration loading and validation
+   - Signal handling for graceful shutdown
+   - Logging initialization
+   - Command-line argument parsing
+   - Key functions:
+     - initialize_application(): Sets up the application
+     - start_processes(): Starts all required processes
+     - handle_signals(): Handles OS signals for graceful shutdown
+     - shutdown(): Performs graceful shutdown
+     - reload_configuration(): Reloads configuration at runtime
+
+2. Create app/core/application.py with:
+   - An Application class that:
+     - Manages the application lifecycle
+     - Coordinates between processes
+     - Handles global state
+     - Methods for:
+       - initialize(): Sets up services and dependencies
+       - start(): Starts all processes
+       - stop(): Stops all processes gracefully
+       - health_check(): Performs application health check
+       - get_status(): Returns application status
+       - handle_error(error): Global error handler
+
+3. Create app/core/process_manager.py with:
+   - A ProcessManager class that:
+     - Manages multiple processes
+     - Handles inter-process communication
+     - Monitors process health
+     - Restarts failed processes
+     - Methods for:
+       - add_process(process): Adds a process to manage
+       - start_all(): Starts all processes
+       - stop_all(): Stops all processes gracefully
+       - restart_process(name): Restarts a specific process
+       - get_process_status(name): Gets process status
+
+4. Create tests/test_application.py and tests/test_process_manager.py with:
+   - Tests for application initialization
+   - Tests for process orchestration
+   - Tests for signal handling
+   - Tests for error recovery
+   - Tests for configuration reloading
+
+5. Create scripts/run_application.py with:
+   - Command-line interface for running the application
+   - Support for different modes (debug, production)
+   - Configuration overrides via command line
+
+Implement proper error handling at all levels. Include comprehensive logging. Make sure all components are properly integrated. Use dependency injection for services. Use type hints and detailed docstrings throughout.
+
+# Phase 5: Testing and Refinement
+## Prompt 28: Comprehensive Unit Testing
+
+Let's implement a comprehensive unit testing framework for the application:
+
+1. Create a testing framework in tests/framework.py with:
+   - Base test classes that provide common functionality
+   - Helper functions for creating test data
+   - Mock classes for external dependencies
+   - Utility functions for database testing
+   - Fixtures for common test scenarios
+
+2. Enhance tests/conftest.py with:
+   - pytest fixtures for:
+     - database_session: Provides a test database session
+     - exchange_service: Provides a mocked exchange service
+     - sample_market_data: Provides sample OHLCV data
+     - sample_positions: Provides sample position data
+     - config: Provides test configuration
+     - app_context: Sets up application context for tests
+
+3. Create test data generators in tests/data_generators.py:
+   - Functions to generate:
+     - generate_ohlcv_data(symbol, timeframe, length): Creates OHLCV data
+     - generate_indicator_data(base_data): Adds indicators to data
+     - generate_cryptocurrency_data(count): Creates cryptocurrency records
+     - generate_positions(count, status): Creates position records
+     - generate_market_snapshots(symbols, count): Creates market snapshots
+
+4. Add missing unit tests for all components:
+   - Ensure all modules have corresponding test files
+   - Verify edge cases are covered
+   - Test error handling scenarios
+   - Test component interactions
+
+5. Create tests/test_coverage.py script that:
+   - Analyzes test coverage
+   - Reports on untested functions/methods
+   - Identifies critical components with insufficient testing
+
+Focus on making tests isolated, repeatable, and fast. Use dependency injection and proper mocking. Aim for high test coverage on critical components. Use descriptive test functions that clearly indicate what's being tested. Include docstrings that explain test scenarios.
+
+## Prompt 29: Integration Testing Implementation
+
+Let's implement integration tests to verify component interactions:
+
+1. Create tests/integration directory with:
+   - A base integration test class in tests/integration/base.py that:
+     - Sets up the test environment
+     - Provides common utilities for integration testing
+     - Manages test database lifecycle
+     - Handles test data setup and teardown
+
+2. Create tests/integration/test_data_flow.py with:
+   - Tests for the entire data collection, processing, and storage flow:
+     - Test data collection from exchange to database
+     - Test indicator calculation and storage
+     - Test market snapshot creation
+     - Verify data integrity through the flow
+
+3. Create tests/integration/test_strategy_execution.py with:
+   - Tests for strategy execution:
+     - Test signal generation from market data
+     - Test opportunity detection
+     - Test position entry and exit decisions
+     - Verify risk management application
+
+4. Create tests/integration/test_process_interaction.py with:
+   - Tests for process interaction:
+     - Test scanner and position manager interaction
+     - Test scheduled task execution
+     - Test application orchestration
+     - Verify error handling and recovery
+
+5. Create tests/integration/test_database_performance.py with:
+   - Tests for database operations:
+     - Test bulk insert operations
+     - Test query performance
+     - Test transaction management
+     - Verify indexing effectiveness
+
+6. Create a test script at scripts/run_integration_tests.py that:
+   - Sets up the test environment
+   - Runs integration tests
+   - Reports results
+   - Supports running specific test suites
+
+Use real components where possible, mocking only external dependencies. Include performance assertions where relevant. Test both happy paths and error scenarios. Use detailed logs to help diagnose test failures.
+
+## Prompt 30: Performance Optimization and Profiling
+
+Let's implement performance optimization and profiling tools:
+
+1. Create app/utils/profiler.py with:
+   - A Profiler class that:
+     - Measures code execution time
+     - Tracks resource usage
+     - Identifies bottlenecks
+     - Methods for:
+       - start_profiling(label): Starts profiling a section
+       - end_profiling(label): Ends profiling and records results
+       - profile_function(func): Decorator for profiling functions
+       - get_results(): Returns profiling results
+       - export_results(filepath): Exports results to file
+
+2. Create app/utils/performance.py with:
+   - Functions for performance optimization:
+     - optimize_dataframe_operations(func): Decorator for pandas optimization
+     - batch_database_operations(operations, batch_size): Batches database operations
+     - cache_result(func, ttl): Implements function result caching
+     - parallel_map(func, items, max_workers): Executes operations in parallel
+
+3. Create app/services/performance_monitor.py with:
+   - A PerformanceMonitor class that:
+     - Tracks application performance in real-time
+     - Logs performance metrics
+     - Identifies performance degradation
+     - Methods for:
+       - monitor_database_operations(): Tracks database performance
+       - monitor_api_calls(): Tracks external API call performance
+       - monitor_process_resources(): Tracks CPU and memory usage
+       - generate_performance_report(): Creates performance summary
+
+4. Create tests/performance directory with test scripts:
+   - tests/performance/test_database_operations.py: Tests database performance
+   - tests/performance/test_indicator_calculation.py: Tests indicator calculation speed
+   - tests/performance/test_data_processing.py: Tests data processing pipelines
+   - tests/performance/test_strategy_execution.py: Tests strategy execution speed
+
+5. Create a benchmark script at scripts/run_benchmarks.py that:
+   - Runs performance benchmarks
+   - Compares results to baseline
+   - Reports significant changes
+   - Identifies optimization opportunities
+
+Use proper profiling tools and techniques. Include memory profiling in addition to timing. Create visualizations of performance results. Make optimization recommendations based on profiling results.
+
+## Prompt 31: Documentation Generation
+
+Let's implement comprehensive documentation for the project:
+
+1. Create a documentation framework in docs/ directory:
+   - docs/index.md: Main documentation entry point
+   - docs/installation.md: Installation instructions
+   - docs/configuration.md: Configuration guide
+   - docs/architecture.md: Architecture overview
+   - docs/api/: API documentation directory
+   - docs/user_guide/: User guide directory
+   - docs/developer_guide/: Developer guide directory
+
+2. Create app/utils/docgen.py with:
+   - Functions for generating documentation from code:
+     - generate_module_docs(module): Generates documentation for a module
+     - generate_class_docs(class): Generates documentation for a class
+     - generate_api_docs(): Generates complete API documentation
+     - extract_examples_from_tests(): Extracts examples from test files
+     - generate_configuration_docs(): Generates documentation from config schema
+
+3. Create documentation templates in docs/templates/:
+   - module_template.md: Template for module documentation
+   - class_template.md: Template for class documentation
+   - function_template.md: Template for function documentation
+   - example_template.md: Template for code examples
+
+4. Create a script at scripts/generate_docs.py that:
+   - Generates documentation from source code
+   - Creates API reference documentation
+   - Builds the documentation site using mkdocs
+   - Supports incremental documentation updates
+
+5. Add README.md files to key directories with:
+   - Purpose of the directory
+   - Overview of contained modules
+   - Usage examples
+   - Implementation notes
+
+Focus on creating clear, usable documentation with examples. Include diagrams for architecture and workflows. Make sure code examples are tested and working. Use consistent formatting and style throughout the documentation.
+
+## Prompt 32: Deployment Preparation and Scripts
+
+Let's create deployment scripts and utilities for the project:
+
+1. Create deployment configuration in deployment/ directory:
+   - deployment/docker/: Docker deployment files
+     - Dockerfile.production: Production-optimized Dockerfile
+     - docker-compose.production.yml: Production Docker Compose config
+   - deployment/kubernetes/: Kubernetes deployment files (if needed)
+     - deployment.yaml: Kubernetes deployment definition
+     - service.yaml: Kubernetes service definition
+     - configmap.yaml: Kubernetes config map
+   - deployment/scripts/: Deployment scripts
+     - deploy.sh: Main deployment script
+     - rollback.sh: Rollback script for failed deployments
+     - health_check.sh: Post-deployment health check script
+
+2. Create app/utils/deployment.py with:
+   - Functions for deployment-related tasks:
+     - prepare_database_for_production(): Optimizes database for production
+     - validate_configuration(config): Validates production configuration
+     - create_backup(db_url, backup_path): Creates database backup
+     - restore_from_backup(db_url, backup_path): Restores from backup
+
+3. Create monitoring configuration in monitoring/ directory:
+   - monitoring/prometheus/: Prometheus configuration
+     - prometheus.yml: Prometheus config file
+   - monitoring/grafana/: Grafana dashboards
+     - dashboard.json: Main dashboard definition
+   - monitoring/alerts.yml: Alert definitions
+
+4. Create a database migration script at scripts/prepare_production_db.py that:
+   - Creates necessary indexes for production
+   - Optimizes database settings
+   - Validates database schema
+   - Performs initial data setup if needed
+
+5. Create a configuration validation script at scripts/validate_production_config.py that:
+   - Checks configuration for production readiness
+   - Validates secrets are properly set
+   - Ensures rate limits are properly configured
+   - Verifies logging configuration
+
+Focus on creating reproducible deployments. Include rollback procedures for failed deployments. Implement proper health checks for deployed components. Include monitoring and alerting configuration.
+
+# Phase 6: Final Integration
+## Prompt 33: Final Integration and System Testing
+
+Let's implement the final integration and comprehensive system testing:
+
+1. Create a full system test suite in tests/system/ directory:
+   - tests/system/test_full_workflow.py: Tests complete system workflow
+   - tests/system/test_failure_scenarios.py: Tests system recovery from failures
+   - tests/system/test_configuration_changes.py: Tests runtime configuration changes
+   - tests/system/test_long_running.py: Tests system stability during long runs
+
+2. Create a simulation framework in app/simulation/:
+   - app/simulation/market_simulator.py: Simulates market conditions
+   - app/simulation/scenario_runner.py: Runs predefined scenarios
+   - app/simulation/performance_evaluator.py: Evaluates system performance
+   - app/simulation/data_generator.py: Generates realistic test data
+
+3. Create integration scripts in scripts/integration/:
+   - scripts/integration/setup_test_environment.py: Sets up test environment
+   - scripts/integration/run_full_system_test.py: Runs complete system test
+   - scripts/integration/generate_test_report.py: Generates test report
+
+4. Create a final pre-release checklist script at scripts/pre_release_check.py that:
+   - Runs all tests
+   - Checks code quality
+   - Validates documentation
+   - Verifies deployment configurations
+   - Generates a pre-release report
+
+5. Update main application to ensure all components are properly integrated:
+   - Verify process orchestration
+   - Confirm error handling and recovery
+   - Ensure logging is comprehensive
+   - Check configuration management
+
+Focus on testing the complete system under realistic conditions. Include tests for failure recovery and edge cases. Generate comprehensive reports on system performance and reliability. Ensure all components work together as expected.
