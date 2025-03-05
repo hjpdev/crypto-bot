@@ -10,7 +10,7 @@ from app.core.database import Database, Base
 from app.core.exceptions import DatabaseConnectionError, DatabaseError
 
 
-class TestModel(Base):
+class DatabaseTestModel(Base):
     """Test model for database operations."""
     __tablename__ = "test_model"
 
@@ -31,7 +31,7 @@ class TestDatabase:
         """Fixture to create a test Database instance with in-memory SQLite."""
         db = Database(sqlite_db_url)
         # Create the test table
-        TestModel.__table__.create(db.engine)
+        DatabaseTestModel.__table__.create(db.engine)
         yield db
         db.dispose()
 
@@ -79,7 +79,7 @@ class TestDatabase:
         """Test execute_with_retry succeeds with a valid operation."""
         def operation():
             with test_db.session_scope() as session:
-                return session.query(TestModel).count()
+                return session.query(DatabaseTestModel).count()
 
         result = test_db.execute_with_retry(operation)
         assert isinstance(result, int)
@@ -180,5 +180,5 @@ class TestDatabaseIntegration:
         yield db
 
         # Clean up the test table
-        TestModel.__table__.drop(db.engine)
+        DatabaseTestModel.__table__.drop(db.engine)
         db.dispose()

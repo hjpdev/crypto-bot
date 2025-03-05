@@ -301,7 +301,7 @@ def identify_trend(data: Union[pd.Series, np.ndarray], window: int = 14) -> pd.S
     # For the rest of the series, use rolling window approach
     for i in range(window, len(prices)):
         # Get the window of data to analyze
-        window_data = prices.iloc[i - window:i]
+        window_data = prices.iloc[i - window : i]
 
         # Calculate linear regression slope
         x = np.arange(window)
@@ -318,7 +318,7 @@ def identify_trend(data: Union[pd.Series, np.ndarray], window: int = 14) -> pd.S
     if (trend != 0).sum() == 0:
         small_window = max(3, window // 3)
         for i in range(small_window, len(prices)):
-            window_data = prices.iloc[max(0, i - small_window):i]
+            window_data = prices.iloc[max(0, i - small_window) : i]
             if len(window_data) >= 3:
                 x = np.arange(len(window_data))
                 y = window_data.values
