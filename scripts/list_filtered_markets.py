@@ -64,85 +64,86 @@ def setup_exchange(exchange_id: str, config: Dict[str, Any]) -> ExchangeService:
 
 def filter_markets(exchange: ExchangeService, filter_config: Dict[str, Any]) -> Tuple[List[str], Dict[str, List[str]]]:
     """
-    Filter markets based on configuration.
+    Filter markets based on the configuration.
 
     Args:
-        exchange: ExchangeService to use
-        filter_config: Filtering configuration
+        exchange: Exchange service to fetch market data
+        filter_config: Filtering configuration dict
 
     Returns:
-        Tuple of (filtered_symbols, rejection_reasons)
+        Tuple of (filtered symbols list, rejection reasons by filter)
     """
-    # Get all symbols
-    try:
-        markets = exchange.fetch_markets()
-        # Handle either dictionary or list format depending on what fetch_markets returns
-        if isinstance(markets, dict):
-            all_symbols = [market['symbol'] for market in markets.values()]
-        else:
-            all_symbols = [market['symbol'] for market in markets]
-        logger.info(f"Found {len(all_symbols)} total symbols on {exchange.exchange_id}")
-    except Exception as e:
-        logger.error(f"Error fetching symbols: {str(e)}")
-        return [], {}
-
-    # Create market filter
     market_filter = MarketFilter(exchange)
-
-    # Track which symbols are filtered by each filter
     rejection_reasons = {}
 
-    # Filter by quote currency if configured
-    filtered_symbols = all_symbols
-    if 'allowed_quotes' in filter_config and filter_config['allowed_quotes']:
-        before_filter = set(filtered_symbols)
-        filtered_symbols = market_filter.filter_by_allowed_quote(filtered_symbols, filter_config['allowed_quotes'])
-        rejected = before_filter - set(filtered_symbols)
-        if rejected:
-            rejection_reasons['quote_currency'] = list(rejected)
+    # Get all available symbols
+    logger.info("Fetching available markets...")
+    try:
+        symbols = exchange.get_symbols()
+        logger.info(f"Found {len(symbols)} markets on {exchange.exchange_id}")
+    except Exception as e:
+        logger.error(f"Error fetching markets: {str(e)}")
+        return [], {}
 
-    # Filter by market cap if configured
-    if 'min_market_cap' in filter_config and filter_config['min_market_cap'] is not None:
-        before_filter = set(filtered_symbols)
-        filtered_symbols = market_filter.filter_by_market_cap(filtered_symbols, filter_config['min_market_cap'])
-        rejected = before_filter - set(filtered_symbols)
-        if rejected:
-            rejection_reasons['market_cap'] = list(rejected)
+    # Keep track of all symbols that get filtered out and why
+    initial_symbols = symbols.copy()
 
-    # Filter by volume if configured
-    if 'min_volume' in filter_config and filter_config['min_volume'] is not None:
-        before_filter = set(filtered_symbols)
-        filtered_symbols = market_filter.filter_by_volume(filtered_symbols, filter_config['min_volume'])
-        rejected = before_filter - set(filtered_symbols)
-        if rejected:
-            rejection_reasons['volume'] = list(rejected)
+    # Apply all filters at once using the MarketFilter service
+    filtered_symbols = market_filter.apply_all_filters(symbols, filter_config)
 
-    # Filter by spread if configured
-    if 'max_spread' in filter_config and filter_config['max_spread'] is not None:
-        before_filter = set(filtered_symbols)
-        filtered_symbols = market_filter.filter_by_spread(filtered_symbols, filter_config['max_spread'])
-        rejected = before_filter - set(filtered_symbols)
-        if rejected:
-            rejection_reasons['spread'] = list(rejected)
+    # Calculate rejected symbols for each filter type to maintain reporting
+    for filter_type in ['quote', 'market_cap', 'volume', 'spread', 'volatility']:
+        # Skip filters not specified in the config
+        if filter_type == 'quote' and 'allowed_quotes' not in filter_config:
+            continue
+        if filter_type == 'market_cap' and ('min_market_cap' not in filter_config or filter_config['min_market_cap'] is None):
+            continue
+        if filter_type == 'volume' and ('min_volume' not in filter_config or filter_config['min_volume'] is None):
+            continue
+        if filter_type == 'spread' and ('max_spread' not in filter_config or filter_config['max_spread'] is None):
+            continue
+        if filter_type == 'volatility' and (
+            'min_volatility' not in filter_config or filter_config['min_volatility'] is None or
+            'max_volatility' not in filter_config or filter_config['max_volatility'] is None):
+            continue
 
-    # Filter by volatility if configured
-    if ('min_volatility' in filter_config and filter_config['min_volatility'] is not None and
-        'max_volatility' in filter_config and filter_config['max_volatility'] is not None):
-
-        timeframe = filter_config.get('volatility_timeframe', '1d')
-        periods = filter_config.get('volatility_periods', 14)
-
-        before_filter = set(filtered_symbols)
-        filtered_symbols = market_filter.filter_by_volatility(
-            filtered_symbols,
-            filter_config['min_volatility'],
-            filter_config['max_volatility'],
-            timeframe,
-            periods
-        )
-        rejected = before_filter - set(filtered_symbols)
-        if rejected:
-            rejection_reasons['volatility'] = list(rejected)
+        # Use the MarketFilter's individual filter functions to determine rejected symbols
+        if filter_type == 'quote':
+            remaining = market_filter.filter_by_allowed_quote(initial_symbols, filter_config['allowed_quotes'])
+            rejected = set(initial_symbols) - set(remaining)
+            if rejected:
+                rejection_reasons['quote'] = list(rejected)
+                initial_symbols = remaining
+        elif filter_type == 'market_cap':
+            remaining = market_filter.filter_by_market_cap(initial_symbols, filter_config['min_market_cap'])
+            rejected = set(initial_symbols) - set(remaining)
+            if rejected:
+                rejection_reasons['market_cap'] = list(rejected)
+                initial_symbols = remaining
+        elif filter_type == 'volume':
+            remaining = market_filter.filter_by_volume(initial_symbols, filter_config['min_volume'])
+            rejected = set(initial_symbols) - set(remaining)
+            if rejected:
+                rejection_reasons['volume'] = list(rejected)
+                initial_symbols = remaining
+        elif filter_type == 'spread':
+            remaining = market_filter.filter_by_spread(initial_symbols, filter_config['max_spread'])
+            rejected = set(initial_symbols) - set(remaining)
+            if rejected:
+                rejection_reasons['spread'] = list(rejected)
+                initial_symbols = remaining
+        elif filter_type == 'volatility':
+            remaining = market_filter.filter_by_volatility(
+                initial_symbols,
+                filter_config['min_volatility'],
+                filter_config['max_volatility'],
+                filter_config.get('volatility_timeframe', '1d'),
+                filter_config.get('volatility_periods', 14)
+            )
+            rejected = set(initial_symbols) - set(remaining)
+            if rejected:
+                rejection_reasons['volatility'] = list(rejected)
+                initial_symbols = remaining
 
     return filtered_symbols, rejection_reasons
 

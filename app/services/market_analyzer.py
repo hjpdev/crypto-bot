@@ -9,12 +9,13 @@ from typing import Dict, List, Optional, Union, Any
 import numpy as np
 import pandas as pd
 from scipy import stats
-import matplotlib.pyplot as plt
-import seaborn as sns
 import statsmodels.api as sm
+import logging
 
 from app.services.indicator_service import IndicatorService
 from app.services.data_preparation import validate_ohlcv_data
+
+logger = logging.getLogger(__name__)
 
 
 class MarketAnalyzer:
@@ -78,7 +79,7 @@ class MarketAnalyzer:
 
         # Calculate ADX for trend strength
         adx_result = self.indicator_service.calculate_adx(ohlcv_data, period=14)
-        print("ADX Result Columns:", adx_result.columns.tolist())
+        logger.debug(f"ADX Result Columns: {adx_result.columns.tolist()}")
 
         # Get current ADX values
         adx = adx_result["ADX_14"].iloc[-1]
@@ -87,7 +88,7 @@ class MarketAnalyzer:
 
         # Calculate Bollinger Bands for volatility
         bbands = self.indicator_service.calculate_bollinger_bands(ohlcv_data, period=20, std_dev=2)
-        print("Bollinger Bands Result Columns:", bbands.columns.tolist())
+        logger.debug(f"Bollinger Bands Result Columns: {bbands.columns.tolist()}")
 
         # Calculate Bollinger Bandwidth
         bb_upper = bbands["BBU_20_2.0"].iloc[-1]
@@ -572,18 +573,25 @@ class MarketAnalyzer:
 
     def visualize_market_analysis(
         self, market_data: pd.DataFrame, analysis_results: Dict, title: str = "Market Analysis"
-    ) -> plt.Figure:
+    ) -> Any:
         """
-        Creates a visualization of market analysis results.
+        Visualize market analysis results.
 
         Args:
             market_data: DataFrame with OHLCV data
-            analysis_results: Dict containing analysis results
-            title: Figure title
+            analysis_results: Dictionary of analysis results
+            title: Plot title
 
         Returns:
-            Matplotlib Figure object with visualizations
+            Matplotlib figure object
         """
+        # Import visualization libraries only when this function is called
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+
+        # Set the style
+        sns.set_style("darkgrid")
+
         validate_ohlcv_data(market_data)
 
         fig = plt.figure(figsize=(15, 12))
