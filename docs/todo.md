@@ -113,12 +113,12 @@
 - [x] Create tests/test_risk_manager.py with unit tests
 - [x] Create tests/test_portfolio_manager.py with unit tests
 ## Market Analysis Implementation
-- [ ] Create app/services/market_analyzer.py with MarketAnalyzer class
-- [ ] Create app/services/market_sentiment.py with MarketSentiment class
-- [ ] Update app/services/__init__.py to export new classes
-- [ ] Create tests/test_market_analyzer.py with unit tests
-- [ ] Create tests/test_market_sentiment.py with unit tests
-- [ ] Create scripts/analyze_market.py script
+- [x] Create app/services/market_analyzer.py with MarketAnalyzer class
+- [x] Create app/services/market_sentiment.py with MarketSentiment class
+- [x] Update app/services/__init__.py to export new classes
+- [x] Create tests/test_market_analyzer.py with unit tests
+- [x] Create tests/test_market_sentiment.py with unit tests
+- [x] Create scripts/analyze_market.py script
 
 # Phase 4: Application Processes
 ## Opportunity Scanner Process

@@ -493,7 +493,7 @@ class MomentumStrategy(BaseStrategy):
         self, symbol: str, entry_price: Decimal, market_data: Dict[str, Any]
     ) -> Decimal:
         """
-        Determine the stop loss price for a trade.
+        Calculate the stop loss price for a trade.
 
         Args:
             symbol: The trading symbol
@@ -508,7 +508,7 @@ class MomentumStrategy(BaseStrategy):
         df = IndicatorService.calculate_atr(ohlcv_data)
 
         # Get the latest ATR value
-        latest_atr = Decimal(str(df.iloc[-1]["atr"]))
+        latest_atr = Decimal(str(df.iloc[-1]["ATR_14"]))
 
         # Get the signal type (buy/sell)
         signals = self.generate_signals(market_data)

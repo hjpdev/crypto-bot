@@ -243,7 +243,7 @@ class IndicatorService:
             period: The period over which to calculate ATR (default: 14)
 
         Returns:
-            DataFrame with the original data and an additional 'atr' column
+            DataFrame with the original data and an additional 'ATR_{period}' column
 
         Raises:
             ValueError: If input data is invalid or missing required columns
@@ -259,7 +259,10 @@ class IndicatorService:
         df = dataframe.copy()
 
         # Calculate ATR using pandas-ta
-        df["atr"] = ta.atr(df["high"], df["low"], df["close"], length=period)
+        atr_value = ta.atr(df["high"], df["low"], df["close"], length=period)
+
+        # Add with the appropriate column name
+        df[f"ATR_{period}"] = atr_value
 
         return df
 
@@ -274,9 +277,9 @@ class IndicatorService:
 
         Returns:
             DataFrame with the original data and additional ADX columns:
-            - 'adx': Average Directional Index
-            - 'dmp': Plus Directional Movement (DI+)
-            - 'dmn': Minus Directional Movement (DI-)
+            - 'ADX_{period}': Average Directional Index
+            - 'DMP_{period}': Plus Directional Movement (DI+)
+            - 'DMN_{period}': Minus Directional Movement (DI-)
 
         Raises:
             ValueError: If input data is invalid or missing required columns
@@ -296,6 +299,8 @@ class IndicatorService:
 
         # Merge the results with the original dataframe
         if adx_result is not None:
+            # Rename columns to match expected naming pattern
+            adx_result.columns = [f"ADX_{period}", f"DMP_{period}", f"DMN_{period}"]
             df = pd.concat([df, adx_result], axis=1)
 
         return df
@@ -689,8 +694,10 @@ class IndicatorService:
                     # Handle ATR calculation
                     params = config if isinstance(config, dict) else {}
                     temp_df = cls.calculate_atr(result_df, **params)
-                    if "atr" in temp_df.columns:
-                        result_df["atr"] = temp_df["atr"]
+                    if f"ATR_{params.get('period')}" in temp_df.columns:
+                        result_df[f"ATR_{params.get('period')}"] = temp_df[
+                            f"ATR_{params.get('period')}"
+                        ]
 
                 elif indicator_type == "adx":
                     # Handle ADX calculation

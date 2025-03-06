@@ -239,21 +239,22 @@ class TestIndicatorService:
         result = IndicatorService.calculate_atr(sample_ohlcv_data)
 
         # Verify result has ATR column
-        assert 'atr' in result.columns
+        assert 'ATR_14' in result.columns
 
         # ATR should have some NaN values at the beginning due to the calculation window
-        assert result['atr'].iloc[:14].isna().any()
+        assert result['ATR_14'].iloc[:14].isna().any()
 
         # Later values should be populated
-        assert not result['atr'].iloc[14:].isna().all()
+        assert not result['ATR_14'].iloc[14:].isna().all()
 
         # ATR should be non-negative
-        valid_indices = result['atr'].notna()
-        assert (result.loc[valid_indices, 'atr'] >= 0).all()
+        valid_indices = result['ATR_14'].notna()
+        assert (result.loc[valid_indices, 'ATR_14'] >= 0).all()
 
         # Test with custom period
         result_custom = IndicatorService.calculate_atr(sample_ohlcv_data, period=7)
-        assert not result_custom['atr'].iloc[7:].isna().all()
+        assert 'ATR_7' in result_custom.columns
+        assert not result_custom['ATR_7'].iloc[7:].isna().all()
 
         # Invalid period should raise ValueError
         with pytest.raises(ValueError, match="Period must be at least 1"):
@@ -437,7 +438,7 @@ class TestIndicatorService:
         assert 'ema_21' in result.columns
         assert 'sma_50' in result.columns
         assert 'BBU_20_2.0' in result.columns
-        assert 'atr' in result.columns
+        assert 'ATR_14' in result.columns
         assert 'ADX_14' in result.columns
         assert 'obv' in result.columns
         assert 'vwap' in result.columns

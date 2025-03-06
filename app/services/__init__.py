@@ -17,6 +17,8 @@ from app.services.data_preparation import (
 )
 from app.services.risk_manager import RiskManager
 from app.services.portfolio_manager import PortfolioManager
+from app.services.market_analyzer import MarketAnalyzer
+from app.services.market_sentiment import MarketSentiment
 
 __all__ = [
     "ExchangeService",
@@ -25,6 +27,8 @@ __all__ = [
     "IndicatorService",
     "RiskManager",
     "PortfolioManager",
+    "MarketAnalyzer",
+    "MarketSentiment",
     "ohlcv_to_dataframe",
     "prepare_for_indicators",
     "resample_ohlcv",
