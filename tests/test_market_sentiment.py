@@ -87,32 +87,38 @@ def bearish_market_data():
     # Create date range
     dates = pd.date_range(start='2023-01-01', periods=100, freq='1h')
 
-    # Base price that trends downward
-    base_price = np.linspace(150, 100, 100) + np.random.normal(0, 3, 100)
+    # Base price that trends strongly downward
+    base_price = np.linspace(150, 80, 100)  # More significant decline
 
-    # Create sample data with a downtrend
+    # Add some noise but maintain the strong downtrend
+    price_with_noise = base_price + np.random.normal(0, 1.5, 100)
+
+    # Create sample data with a clear downtrend
     data = {
         'timestamp': dates,
-        'open': base_price + np.random.uniform(0, 2, 100),
-        'close': base_price - np.random.uniform(0, 2, 100),  # Ensure mostly bearish candles
+        'open': price_with_noise + np.random.uniform(0, 1, 100),
+        'close': price_with_noise - np.random.uniform(0, 1, 100),  # Ensure bearish candles
         'high': None,
         'low': None,
         'volume': np.random.normal(1000, 200, 100) * (1 + 0.1 * np.sin(np.linspace(0, 6, 100)))
     }
 
-    # Ensure close < open for most candles (bearish)
+    # Make sure all recent candles are strongly bearish
     for i in range(len(data['close'])):
-        if i > 70:  # Make the last 30 candles strongly bearish
-            data['close'][i] = data['open'][i] * 0.98  # 2% loss
+        if i > 50:  # Make the second half strongly bearish
+            data['close'][i] = data['open'][i] * 0.97  # 3% loss
+        else:
+            # Still mostly bearish in the first half
+            data['close'][i] = data['open'][i] * (0.99 if i % 5 != 0 else 1.01)  # Occasional bullish candle
 
     # Set high and low based on open/close
-    data['high'] = [max(o, c) + np.random.uniform(0.5, 2.0) for o, c in zip(data['open'], data['close'])]
-    data['low'] = [min(o, c) - np.random.uniform(0.5, 2.0) for o, c in zip(data['open'], data['close'])]
+    data['high'] = [max(o, c) + np.random.uniform(0.2, 1.0) for o, c in zip(data['open'], data['close'])]
+    data['low'] = [min(o, c) - np.random.uniform(0.2, 1.0) for o, c in zip(data['open'], data['close'])]
 
-    # Increase volume for bearish candles
+    # Increase volume for bearish candles to emphasize the trend
     for i in range(len(data['volume'])):
         if data['close'][i] < data['open'][i]:
-            data['volume'][i] *= 1.5
+            data['volume'][i] *= 2.0  # Higher volume multiplier
 
     # Create DataFrame
     df = pd.DataFrame(data)

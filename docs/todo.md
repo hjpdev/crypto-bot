@@ -128,10 +128,10 @@
 - [x] Add tests for scanner functionality
 - [x] Implement logging and error handling
 ## Scheduled Tasks
-- [ ] Create scheduler for regular market data collection
-- [ ] Implement task for updating cryptocurrency metadata
-- [ ] Create performance calculation scheduled task
-- [ ] Add database maintenance tasks
+- [x] Create scheduler for regular market data collection
+- [x] Implement task for updating cryptocurrency metadata
+- [x] Create performance calculation scheduled task
+- [x] Add database maintenance tasks
 ## Data Collection and Storage
 - [ ] Implement periodic OHLCV data collection
 - [ ] Create order book snapshot collection

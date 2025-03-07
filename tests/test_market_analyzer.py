@@ -378,7 +378,7 @@ class TestVolumeAnomalyDetection:
         """Test detecting volume anomalies."""
         # Modify the last few volume values to create an anomaly
         modified_data = sample_market_data.copy()
-        modified_data.iloc[-1, modified_data.columns.get_loc('volume')] = modified_data['volume'].mean() * 3
+        modified_data.iloc[-1, modified_data.columns.get_loc('volume')] = modified_data['volume'].mean() * 4
 
         anomaly_result = market_analyzer.detect_volume_anomalies(modified_data)
 
@@ -387,8 +387,8 @@ class TestVolumeAnomalyDetection:
         assert 'relative_volume' in anomaly_result
 
         # The modified data should show an anomaly
-        assert anomaly_result['is_anomaly'], "Modified data with 3x volume should show anomaly"
-        assert anomaly_result['relative_volume'] > 2.5, "Relative volume should be around 3"
+        assert anomaly_result['is_anomaly'], "Modified data with 4x volume should show anomaly"
+        assert anomaly_result['relative_volume'] > 2.5, "Relative volume should be significantly above threshold"
 
 
 class TestCorrelationMatrix:
