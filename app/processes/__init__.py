@@ -7,7 +7,9 @@ and monitoring system health.
 """
 
 from app.processes.scanner_process import ScannerProcess
+from app.processes.position_process import PositionProcess
 
 __all__ = [
     "ScannerProcess",
+    "PositionProcess",
 ]

@@ -62,7 +62,7 @@ def mock_data_storage():
             "volume": [1000.0, 1100.0, 1200.0],
             "rsi": [60.0, 65.0, 70.0],
             "sma": [102.0, 103.0, 104.0],
-        }, index=pd.date_range(now - timedelta(hours=2), periods=3, freq="H"))
+        }, index=pd.date_range(now - timedelta(hours=2), periods=3, freq="h"))
         return df
 
     mock.get_ohlcv.side_effect = mock_get_ohlcv

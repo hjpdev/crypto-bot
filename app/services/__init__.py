@@ -22,6 +22,8 @@ from app.services.market_sentiment import MarketSentiment
 from app.services.scanner import OpportunityScanner
 from app.services.data_collector import DataCollector
 from app.services.data_storage import DataStorage
+from app.services.position_manager import PositionManager
+from app.services.position_reporting import PositionReporting
 
 __all__ = [
     "ExchangeService",
@@ -35,6 +37,8 @@ __all__ = [
     "OpportunityScanner",
     "DataCollector",
     "DataStorage",
+    "PositionManager",
+    "PositionReporting",
     "ohlcv_to_dataframe",
     "prepare_for_indicators",
     "resample_ohlcv",
