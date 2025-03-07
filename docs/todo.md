@@ -133,10 +133,10 @@
 - [x] Create performance calculation scheduled task
 - [x] Add database maintenance tasks
 ## Data Collection and Storage
-- [ ] Implement periodic OHLCV data collection
-- [ ] Create order book snapshot collection
-- [ ] Implement indicator calculation and storage
-- [ ] Add market correlation analysis
+- [x] Implement periodic OHLCV data collection
+- [x] Create order book snapshot collection
+- [x] Implement indicator calculation and storage
+- [x] Add market correlation analysis
 ## Position Management
 - [ ] Implement position tracking functionality
 - [ ] Create exit signal detection
