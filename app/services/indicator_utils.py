@@ -5,7 +5,7 @@ This module provides helper functions for advanced calculations, pattern detecti
 and data manipulation used by the indicator service.
 """
 
-from typing import List, Union, Callable
+from typing import List, Union
 import numpy as np
 import pandas as pd
 
