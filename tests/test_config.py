@@ -13,26 +13,17 @@ def valid_config_dict() -> Dict[str, Any]:
     """Return a valid configuration dictionary for testing."""
     return {
         "app": {
-            "name": "Crypto Trading Bot",
-            "log_level": "INFO",
-            "strategy": "momentum"
-        },
-        "exchanges": {
-            "kraken": {
-                "api_key": "your-api-key",
-                "api_secret": "your-api-secret",
-                "base_url": "https://api.kraken.com",
-                "test_mode": True,
-                "enabled": True,
-
-            }
+            "exchange_id": "kraken",
+            "strategy_name": "momentum",
+            "log_level": "INFO"
         },
         "data_collection": {
+            "symbols": ["BTC/USD", "ETH/USD", "XRP/USD", "BTC/USDT", "ETH/USDT"],
             "symbol_match_patterns": ["/USD"],
             "symbol_exclude_patterns": [".d", "BULL", "BEAR", "UP", "DOWN"],
-            "enabled": True,
-            "interval": 60,
-            "timeframes": ["1m", "5m", "1h"]
+            "timeframes": ["1m", "5m", "1h"],
+            "store_ohlcv": False,
+            "interval": 60
         },
         "entry_conditions": [
             {
@@ -51,11 +42,20 @@ def valid_config_dict() -> Dict[str, Any]:
             }
         ],
         "position_management": {
-            "stake_amount": 100,
-            "max_drawdown_percent": 20,
-            "stop_loss_percent": 10,
-            "trailing_stop": True,
-            "trailing_stop_percent": 5
+            "account_balance": 10000.0,
+            "max_amount": 100,
+            "risk_per_trade": 2.0,
+            "max_open_positions": 5,
+            "stop_loss_percent": 2.5,
+            "trailing_stop_percent": 1.0,
+            "take_profit": {
+                "type": "fixed_percentage",
+                "targets": [
+                    {"target": 1.5, "percentage": 20},
+                    {"target": 2.5, "percentage": 25},
+                    {"target": 3.0, "percentage": 30}
+                ]
+            }
         }
     }
 
@@ -82,10 +82,7 @@ def config_instance(config_file='tests/test_config.yaml'):
 
 
 class TestConfigClass:
-    """Tests for the Config class."""
-
     def test_singleton_pattern(self, config_file):
-        """Test that Config implements the singleton pattern correctly."""
         config1 = Config(config_file)
         config2 = Config(config_file)
 
@@ -93,7 +90,6 @@ class TestConfigClass:
         assert id(config1) == id(config2)
 
     def test_get_instance(self, config_file):
-        """Test the get_instance class method."""
         Config._instance = None
         config1 = Config.get_instance(config_file)
         config2 = Config.get_instance()
@@ -105,29 +101,27 @@ class TestConfigClass:
         """Test that configuration is loaded correctly."""
         assert config_instance.config is not None
         assert "app" in config_instance.config
-        assert config_instance.config["app"]["name"] == valid_config_dict["app"]["name"]
 
     def test_get_method(self, config_instance):
         """Test the get method."""
         app_config = config_instance.get("app")
         assert app_config is not None
-        assert app_config["name"] == "Crypto Trading Bot"
 
         non_existent = config_instance.get("non_existent", "default_value")
         assert non_existent == "default_value"
 
     def test_get_nested(self, config_instance):
         """Test the get_nested method."""
-        exchange_enabled = config_instance.get_nested("exchanges.kraken.enabled")
-        assert exchange_enabled is True
+        exchange_enabled = config_instance.get_nested("position_management.account_balance")
+        assert exchange_enabled == 10000.0
 
-        api_key = config_instance.get_nested("exchanges.kraken.api_key")
-        assert api_key == "YOUR_API_KEY"
+        take_profit_type = config_instance.get_nested("position_management.take_profit.type")
+        assert take_profit_type == "fixed_percentage"
 
         non_existent = config_instance.get_nested("non.existent.path", "default_value")
         assert non_existent == "default_value"
 
-        partially_invalid = config_instance.get_nested("database.non_existent", "default_value")
+        partially_invalid = config_instance.get_nested("position_management.non_existent", "default_value")
         assert partially_invalid == "default_value"
 
 
@@ -142,7 +136,6 @@ class TestConfigValidation:
         assert config is not None
 
     def test_invalid_timeframe(self, valid_config_dict, config_file):
-        """Test validation of invalid timeframe."""
         invalid_config = valid_config_dict.copy()
         invalid_config["data_collection"]["timeframes"] = ["1m", "invalid"]
 
@@ -157,7 +150,6 @@ class TestConfigValidation:
         assert "timeframes" in str(exc_info.value) or "invalid" in str(exc_info.value)
 
     def test_invalid_data_collection(self, valid_config_dict, config_file):
-        """Test validation of invalid data collection config."""
         invalid_config = valid_config_dict.copy()
         invalid_config["data_collection"]["symbols"] = []
 
@@ -172,7 +164,6 @@ class TestConfigValidation:
         assert "symbols" in str(exc_info.value) or "too short" in str(exc_info.value)
 
     def test_non_existent_config(self):
-        """Test loading a non-existent configuration file."""
         Config._instance = None
 
         with pytest.raises(FileNotFoundError):

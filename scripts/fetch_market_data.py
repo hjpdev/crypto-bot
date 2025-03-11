@@ -29,41 +29,41 @@ logging.basicConfig(
 
 logger = logging.getLogger("fetch_market_data")
 
+# @TODO: Load exchange API keys from config file
+# def load_exchange_api_keys() -> Dict[str, Dict[str, str]]:
+#     """Load exchange API keys from environment variables."""
+#     exchanges = {}
 
-def load_exchange_api_keys() -> Dict[str, Dict[str, str]]:
-    """Load exchange API keys from environment variables."""
-    exchanges = {}
+#     # Binance
+#     binance_api_key = os.environ.get("BINANCE_API_KEY")
+#     binance_secret = os.environ.get("BINANCE_SECRET")
+#     if binance_api_key and binance_secret:
+#         exchanges["binance"] = {
+#             "api_key": binance_api_key,
+#             "secret": binance_secret
+#         }
 
-    # Binance
-    binance_api_key = os.environ.get("BINANCE_API_KEY")
-    binance_secret = os.environ.get("BINANCE_SECRET")
-    if binance_api_key and binance_secret:
-        exchanges["binance"] = {
-            "api_key": binance_api_key,
-            "secret": binance_secret
-        }
+#     # Coinbase Pro
+#     coinbase_api_key = os.environ.get("COINBASE_API_KEY")
+#     coinbase_secret = os.environ.get("COINBASE_SECRET")
+#     coinbase_password = os.environ.get("COINBASE_PASSPHRASE")
+#     if coinbase_api_key and coinbase_secret and coinbase_password:
+#         exchanges["coinbasepro"] = {
+#             "api_key": coinbase_api_key,
+#             "secret": coinbase_secret,
+#             "password": coinbase_password
+#         }
 
-    # Coinbase Pro
-    coinbase_api_key = os.environ.get("COINBASE_API_KEY")
-    coinbase_secret = os.environ.get("COINBASE_SECRET")
-    coinbase_password = os.environ.get("COINBASE_PASSPHRASE")
-    if coinbase_api_key and coinbase_secret and coinbase_password:
-        exchanges["coinbasepro"] = {
-            "api_key": coinbase_api_key,
-            "secret": coinbase_secret,
-            "password": coinbase_password
-        }
+#     # Kraken
+#     kraken_api_key = os.environ.get("KRAKEN_API_KEY")
+#     kraken_secret = os.environ.get("KRAKEN_SECRET")
+#     if kraken_api_key and kraken_secret:
+#         exchanges["kraken"] = {
+#             "api_key": kraken_api_key,
+#             "secret": kraken_secret
+#         }
 
-    # Kraken
-    kraken_api_key = os.environ.get("KRAKEN_API_KEY")
-    kraken_secret = os.environ.get("KRAKEN_SECRET")
-    if kraken_api_key and kraken_secret:
-        exchanges["kraken"] = {
-            "api_key": kraken_api_key,
-            "secret": kraken_secret
-        }
-
-    return exchanges
+#     return exchanges
 
 
 def display_table(data: List[Dict[str, Any]], title: str) -> None:
@@ -382,36 +382,34 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    exchange_credentials = load_exchange_api_keys()
+    # exchange_credentials = load_exchange_api_keys()
 
     try:
-        exchange_id = args.exchange
+        # api_key = None
+        # secret = None
+        # password = None
 
-        api_key = None
-        secret = None
-        password = None
-
-        if exchange_id in exchange_credentials:
-            creds = exchange_credentials[exchange_id]
-            api_key = creds.get("api_key")
-            secret = creds.get("secret")
-            password = creds.get("password")
-            logger.info(f"Using authentication for {exchange_id}")
-        else:
-            logger.info(f"No authentication found for {exchange_id}, using public API only")
+        # if exchange_id in exchange_credentials:
+        #     creds = exchange_credentials[exchange_id]
+        #     api_key = creds.get("api_key")
+        #     secret = creds.get("secret")
+        #     password = creds.get("password")
+        #     logger.info(f"Using authentication for {exchange_id}")
+        # else:
+        #     logger.info(f"No authentication found for {exchange_id}, using public API only")
 
         exchange_service = ExchangeService(
-            exchange_id=exchange_id,
-            api_key=api_key,
-            secret=secret,
-            password=password,
-            sandbox=args.sandbox,
+            exchange_id=args.exchange,
+            # api_key=api_key,
+            # secret=secret,
+            # password=password,
+            # sandbox=args.sandbox,
             timeout=30000,  # 30 seconds
             rate_limit_calls_per_second=2.0,  # Be gentle with the API
             max_retries=3
         )
 
-        logger.info(f"Successfully connected to {exchange_id}")
+        logger.info(f"Successfully connected to {args.exchange}")
 
         if args.data_type == "ohlcv":
             fetch_ohlcv_data(exchange_service, args)

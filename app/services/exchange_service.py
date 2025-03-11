@@ -129,7 +129,7 @@ class ExchangeService:
             jitter=jitter,
         )
 
-        self._exchange = self._initialize_exchange()
+        self.exchange = self._initialize_exchange()
 
         self._markets_cache: Dict[str, Any] = {}
         self._markets_cache_timestamp: Optional[float] = None
@@ -179,7 +179,7 @@ class ExchangeService:
         return exchange
 
     def get_exchange(self) -> ccxt.Exchange:
-        return self._exchange
+        return self.exchange
 
     def _is_cache_valid(self, timestamp: Optional[float], ttl: int | None = None) -> bool:
         """Check if cached data is still valid."""
@@ -196,16 +196,16 @@ class ExchangeService:
     def _get_exchange_info(self) -> Dict[str, Any]:
         """Get exchange information including rate limits and capabilities."""
         return {
-            "id": self._exchange.id,
-            "name": self._exchange.name,
-            "countries": getattr(self._exchange, "countries", None),
-            "rateLimit": getattr(self._exchange, "rateLimit", None),
-            "has": getattr(self._exchange, "has", {}),
-            "urls": getattr(self._exchange, "urls", {}),
-            "version": getattr(self._exchange, "version", None),
-            "has_fetch_ohlcv": self._exchange.has.get("fetchOHLCV", False),
-            "has_fetch_order_book": self._exchange.has.get("fetchOrderBook", False),
-            "timeframes": getattr(self._exchange, "timeframes", None),
+            "id": self.exchange.id,
+            "name": self.exchange.name,
+            "countries": getattr(self.exchange, "countries", None),
+            "rateLimit": getattr(self.exchange, "rateLimit", None),
+            "has": getattr(self.exchange, "has", {}),
+            "urls": getattr(self.exchange, "urls", {}),
+            "version": getattr(self.exchange, "version", None),
+            "has_fetch_ohlcv": self.exchange.has.get("fetchOHLCV", False),
+            "has_fetch_order_book": self.exchange.has.get("fetchOrderBook", False),
+            "timeframes": getattr(self.exchange, "timeframes", None),
         }
 
     @functools.wraps(ccxt.Exchange.fetch_markets)
@@ -217,7 +217,7 @@ class ExchangeService:
         if not force_refresh and self._is_cache_valid(self._markets_cache_timestamp):
             return self._markets_cache
 
-        fetch_markets_with_backoff = self.rate_limiter.with_backoff(self._exchange.fetch_markets)
+        fetch_markets_with_backoff = self.rate_limiter.with_backoff(self.exchange.fetch_markets)
         markets = fetch_markets_with_backoff(params=params)
 
         self._markets_cache = markets
@@ -247,7 +247,7 @@ class ExchangeService:
         ):
             return self._tickers_cache[symbol]
 
-        fetch_ticker_with_backoff = self.rate_limiter.with_backoff(self._exchange.fetch_ticker)
+        fetch_ticker_with_backoff = self.rate_limiter.with_backoff(self.exchange.fetch_ticker)
         ticker = fetch_ticker_with_backoff(symbol, params=params)
 
         self._tickers_cache[symbol] = ticker
@@ -271,13 +271,13 @@ class ExchangeService:
                 f"Exchange {self.exchange_id} does not support fetching OHLCV data"
             )
 
-        if timeframe not in self._exchange.timeframes:
-            supported = list(self._exchange.timeframes.keys())
+        if timeframe not in self.exchange.timeframes:
+            supported = list(self.exchange.timeframes.keys())
             raise ValueError(
                 f"Timeframe '{timeframe}' not supported. Supported timeframes: {supported}"
             )
 
-        fetch_ohlcv_with_backoff = self.rate_limiter.with_backoff(self._exchange.fetch_ohlcv)
+        fetch_ohlcv_with_backoff = self.rate_limiter.with_backoff(self.exchange.fetch_ohlcv)
         ohlcv = fetch_ohlcv_with_backoff(symbol, timeframe, since, limit, params=params)
 
         return ohlcv
@@ -305,7 +305,7 @@ class ExchangeService:
 
         # Apply rate limiting and backoff
         fetch_order_book_with_backoff = self.rate_limiter.with_backoff(
-            self._exchange.fetch_order_book
+            self.exchange.fetch_order_book
         )
         order_book = fetch_order_book_with_backoff(symbol, limit, params=params)
 
@@ -343,8 +343,8 @@ class ExchangeService:
                 f"Exchange {self.exchange_id} does not support fetching OHLCV data"
             )
 
-        if timeframe not in self._exchange.timeframes:
-            supported = list(self._exchange.timeframes.keys())
+        if timeframe not in self.exchange.timeframes:
+            supported = list(self.exchange.timeframes.keys())
             raise ValueError(
                 f"Timeframe '{timeframe}' not supported. Supported timeframes: {supported}"
             )
@@ -366,7 +366,7 @@ class ExchangeService:
 
         while current_since < end_time:
             # Fetch a batch of candles
-            fetch_ohlcv_with_backoff = self.rate_limiter.with_backoff(self._exchange.fetch_ohlcv)
+            fetch_ohlcv_with_backoff = self.rate_limiter.with_backoff(self.exchange.fetch_ohlcv)
             candles = fetch_ohlcv_with_backoff(
                 symbol=symbol, timeframe=timeframe, since=current_since, limit=limit, params=params
             )
@@ -482,7 +482,7 @@ class ExchangeService:
 
         # Apply rate limiting and backoff
         fetch_order_book_with_backoff = self.rate_limiter.with_backoff(
-            self._exchange.fetch_order_book
+            self.exchange.fetch_order_book
         )
         order_book = fetch_order_book_with_backoff(symbol, depth, params=params)
 
@@ -522,13 +522,13 @@ class ExchangeService:
             return self._recent_trades_cache[symbol]
 
         # Check exchange capabilities
-        if not self._exchange.has.get("fetchTrades", False):
+        if not self.exchange.has.get("fetchTrades", False):
             raise NotImplementedError(
                 f"Exchange {self.exchange_id} does not support fetching trades"
             )
 
         # Apply rate limiting and backoff
-        fetch_trades_with_backoff = self.rate_limiter.with_backoff(self._exchange.fetch_trades)
+        fetch_trades_with_backoff = self.rate_limiter.with_backoff(self.exchange.fetch_trades)
         trades = fetch_trades_with_backoff(symbol, limit, params=params)
 
         # Cache the result if caching is enabled
@@ -558,10 +558,10 @@ class ExchangeService:
         results = {}
 
         # Check if exchange supports fetching multiple tickers
-        if self._exchange.has.get("fetchTickers", False):
+        if self.exchange.has.get("fetchTickers", False):
             # Fetch all tickers in one request if possible
             fetch_tickers_with_backoff = self.rate_limiter.with_backoff(
-                self._exchange.fetch_tickers
+                self.exchange.fetch_tickers
             )
 
             try:
@@ -621,14 +621,14 @@ class ExchangeService:
             return self._funding_rate_cache[symbol]
 
         # Check exchange capabilities
-        if not self._exchange.has.get("fetchFundingRate", False):
+        if not self.exchange.has.get("fetchFundingRate", False):
             raise NotImplementedError(
                 f"Exchange {self.exchange_id} does not support fetching funding rates"
             )
 
         # Apply rate limiting and backoff
         fetch_funding_rate_with_backoff = self.rate_limiter.with_backoff(
-            self._exchange.fetch_funding_rate
+            self.exchange.fetch_funding_rate
         )
         funding_rate = fetch_funding_rate_with_backoff(symbol, params=params)
 
@@ -821,8 +821,8 @@ class ExchangeService:
         self._symbol_metadata_cache_timestamp = {}
 
         # Close any active sessions
-        if hasattr(self._exchange, "session") and hasattr(self._exchange.session, "close"):
-            self._exchange.session.close()
+        if hasattr(self.exchange, "session") and hasattr(self.exchange.session, "close"):
+            self.exchange.session.close()
 
     def set_filter_cache_ttl(self, ttl: int) -> None:
         """Set the TTL for the filtered symbols cache."""

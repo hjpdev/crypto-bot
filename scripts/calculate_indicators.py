@@ -11,21 +11,114 @@ import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 from datetime import datetime, timedelta
+import math
 
 # Add the parent directory to sys.path to import app modules
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
+from app.services.exchange_service import ExchangeService
 from app.services.indicator_service import IndicatorService
 from app.services.indicator_utils import normalize_indicator
+
+
+def fetch_market_data(symbol: str = "BTC/USDT", days: int = 120, timeframe: str = "1d") -> pd.DataFrame:
+    """
+    Fetch real market data from the exchange.
+
+    Args:
+        symbol: Trading pair symbol (e.g., BTC/USDT)
+        days: Number of days of historical data to fetch
+        timeframe: Timeframe for the candles (e.g., 1d, 4h, 1h)
+
+    Returns:
+        DataFrame with OHLCV data
+    """
+    # Calculate the 'since' timestamp in milliseconds
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+    since = int(start_date.timestamp() * 1000)  # Convert to milliseconds
+    
+    print(f"Fetching {days} days of {timeframe} data for {symbol} since {start_date.strftime('%Y-%m-%d')}")
+    
+    # Initialize the exchange service (without authentication for public data)
+    exchange_service = ExchangeService(
+        exchange_id="binance",  # Using Binance as default exchange
+        enableRateLimit=True
+    )
+    
+    # Calculate the number of candles needed based on timeframe
+    timeframe_to_minutes = {
+        "1m": 1,
+        "3m": 3,
+        "5m": 5,
+        "15m": 15,
+        "30m": 30,
+        "1h": 60,
+        "2h": 120,
+        "4h": 240,
+        "6h": 360,
+        "8h": 480,
+        "12h": 720,
+        "1d": 1440,  # 24 * 60
+        "3d": 4320,  # 3 * 24 * 60
+        "1w": 10080  # 7 * 24 * 60
+    }
+    
+    # Get minutes in timeframe
+    minutes_in_timeframe = timeframe_to_minutes.get(timeframe, 1440)  # Default to 1d if unknown
+    
+    # Calculate candles needed for the requested days
+    minutes_in_period = days * 1440  # days * 24 hours * 60 minutes
+    candles_needed = math.ceil(minutes_in_period / minutes_in_timeframe)
+    
+    # Add buffer for weekends/holidays and exchange limitations
+    candles_to_fetch = min(1000, candles_needed * 2)  # Most exchanges limit to 1000 candles
+    
+    print(f"Calculating approximately {candles_needed} candles needed, fetching {candles_to_fetch}")
+    
+    # Fetch OHLCV data
+    try:
+        ohlcv_data = exchange_service.fetch_ohlcv(
+            symbol=symbol,
+            timeframe=timeframe,
+            since=since,
+            limit=candles_to_fetch
+        )
+        
+        # Convert to DataFrame
+        df = pd.DataFrame(
+            ohlcv_data, 
+            columns=['timestamp', 'open', 'high', 'low', 'close', 'volume']
+        )
+        
+        # Convert timestamp to datetime and set as index
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        df = df.set_index('timestamp')
+        
+        # Check if we have enough data
+        if len(df) < 30:  # Most indicators need at least 30 data points
+            print(f"Warning: Only {len(df)} candles were fetched, which is not enough for reliable indicator calculation")
+            if len(df) < 2:
+                print("Error: Not enough data points. Falling back to sample data...")
+                return fetch_sample_data(days)
+        
+        print(f"Successfully fetched {len(df)} candles")
+        return df
+        
+    except Exception as e:
+        print(f"Error fetching market data: {str(e)}")
+        print("Falling back to sample data...")
+        return fetch_sample_data(days)
 
 
 def fetch_sample_data(days: int = 100) -> pd.DataFrame:
     """
     Create sample market data for demonstration purposes.
-    In a real implementation, this would fetch data from an exchange.
+    This is used as a fallback when real data cannot be fetched.
 
     Args:
         days: Number of days of data to generate
@@ -33,6 +126,8 @@ def fetch_sample_data(days: int = 100) -> pd.DataFrame:
     Returns:
         DataFrame with OHLCV data
     """
+    print("Generating sample market data...")
+
     # Create date range
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)
@@ -71,6 +166,11 @@ def calculate_all_indicators(data: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame with calculated indicators
     """
+    # Check if we have enough data for calculations
+    min_data_points = 35  # Need at least this many for MACD and other indicators
+    if len(data) < min_data_points:
+        print(f"Warning: Only {len(data)} data points available. At least {min_data_points} recommended for reliable calculations.")
+    
     # Define indicators configuration for batch calculation
     indicators_config = {
         'rsi': {'period': 14},
@@ -85,8 +185,26 @@ def calculate_all_indicators(data: pd.DataFrame) -> pd.DataFrame:
         'support_resistance': {'lookback': 14}
     }
 
+    # Check for MACD specifically as it needs the most data
+    if len(data) < 35:
+        print(f"Skipping MACD calculation: Not enough data points for MACD calculation. Need at least 35 periods.")
+        # Remove MACD from config if not enough data
+        if 'macd' in indicators_config:
+            del indicators_config['macd']
+
     # Calculate all indicators using batch_calculate
-    result = IndicatorService.batch_calculate(data, indicators_config)
+    try:
+        result = IndicatorService.batch_calculate(data, indicators_config)
+    except Exception as e:
+        print(f"Error in batch calculation: {str(e)}")
+        # Create empty result dataframe
+        result = pd.DataFrame(index=data.index)
+        # Add price data at minimum
+        result['close'] = data['close']
+        result['open'] = data['open']
+        result['high'] = data['high']
+        result['low'] = data['low']
+        result['volume'] = data['volume']
 
     # Calculated one by one for demonstration
     print("Calculating indicators individually...")
@@ -375,162 +493,202 @@ def display_results(data: pd.DataFrame) -> None:
     Args:
         data: DataFrame with OHLCV data and calculated indicators
     """
-    # Display summary statistics
     print("\n=== SUMMARY STATISTICS ===")
-
-    # Last row (most recent data)
-    last_row = data.iloc[-1]
-
-    # Current price and trend
-    print(f"Current Price: ${last_row['close']:.2f}")
-
-    # RSI Analysis
-    if 'rsi' in data.columns:
-        rsi_value = last_row['rsi']
-        print(f"RSI: {rsi_value:.2f}", end=" ")
-
-        if rsi_value > 70:
-            print("(Overbought)")
-        elif rsi_value < 30:
-            print("(Oversold)")
+    
+    # Current price
+    try:
+        current_price = data['close'].iloc[-1]
+        print(f"Current Price: ${current_price:.2f}")
+    except (KeyError, IndexError):
+        print("Current Price: Not available")
+    
+    # RSI
+    try:
+        rsi_value = data.get('rsi', pd.Series()).iloc[-1]
+        if pd.notnull(rsi_value):
+            print(f"RSI: {rsi_value:.2f}", end=" ")
+            if rsi_value < 30:
+                print("(Oversold)")
+            elif rsi_value > 70:
+                print("(Overbought)")
+            else:
+                print("(Neutral)")
         else:
-            print("(Neutral)")
-
-    # MACD Analysis
-    if 'MACD_12_26_9' in data.columns and 'MACDs_12_26_9' in data.columns:
-        macd = last_row['MACD_12_26_9']
-        signal = last_row['MACDs_12_26_9']
-        hist = last_row['MACDh_12_26_9'] if 'MACDh_12_26_9' in data.columns else macd - signal
-
-        print(f"MACD: {macd:.4f}, Signal: {signal:.4f}, Histogram: {hist:.4f}", end=" ")
-
-        if hist > 0 and hist > data['MACDh_12_26_9'].iloc[-2]:
-            print("(Bullish momentum increasing)")
-        elif hist > 0 and hist < data['MACDh_12_26_9'].iloc[-2]:
-            print("(Bullish momentum weakening)")
-        elif hist < 0 and hist < data['MACDh_12_26_9'].iloc[-2]:
-            print("(Bearish momentum increasing)")
-        elif hist < 0 and hist > data['MACDh_12_26_9'].iloc[-2]:
-            print("(Bearish momentum weakening)")
+            print("RSI: Not available")
+    except (KeyError, IndexError, AttributeError):
+        print("RSI: Not available")
+    
+    # MACD
+    try:
+        macd_value = data.get('macd', pd.Series()).iloc[-1]
+        signal_value = data.get('macd_signal', pd.Series()).iloc[-1]
+        histogram_value = data.get('macd_histogram', pd.Series()).iloc[-1]
+        
+        if pd.notnull(macd_value) and pd.notnull(signal_value) and pd.notnull(histogram_value):
+            print(f"MACD: {macd_value:.4f}, Signal: {signal_value:.4f}, Histogram: {histogram_value:.4f}", end=" ")
+            
+            if histogram_value > 0 and histogram_value > data.get('macd_histogram', pd.Series()).iloc[-2]:
+                print("(Bullish momentum strengthening)")
+            elif histogram_value > 0 and histogram_value < data.get('macd_histogram', pd.Series()).iloc[-2]:
+                print("(Bullish momentum weakening)")
+            elif histogram_value < 0 and histogram_value < data.get('macd_histogram', pd.Series()).iloc[-2]:
+                print("(Bearish momentum strengthening)")
+            elif histogram_value < 0 and histogram_value > data.get('macd_histogram', pd.Series()).iloc[-2]:
+                print("(Bearish momentum weakening)")
+            else:
+                print("(Neutral)")
         else:
-            print("(Neutral)")
-
-    # ADX Analysis
-    if 'ADX_14' in data.columns:
-        adx = last_row['ADX_14']
-        print(f"ADX: {adx:.2f}", end=" ")
-
-        if adx > 25:
-            print("(Strong trend)")
+            print("MACD: Not available")
+    except (KeyError, IndexError, AttributeError):
+        print("MACD: Not available")
+    
+    # ADX
+    try:
+        adx_value = data.get('adx', pd.Series()).iloc[-1]
+        if pd.notnull(adx_value):
+            print(f"ADX: {adx_value:.2f}", end=" ")
+            if adx_value > 25:
+                print("(Strong trend)")
+            elif adx_value > 20:
+                print("(Trending)")
+            else:
+                print("(No trend)")
         else:
-            print("(Weak trend)")
-
-    # Bollinger Bands Analysis
-    if all(col in data.columns for col in ['BBU_20_2.0', 'BBM_20_2.0', 'BBL_20_2.0']):
-        close = last_row['close']
-        upper_band = last_row['BBU_20_2.0']
-        middle_band = last_row['BBM_20_2.0']
-        lower_band = last_row['BBL_20_2.0']
-
-        bb_width = (upper_band - lower_band) / middle_band
-
-        print(f"Bollinger Bands: Width = {bb_width:.4f}", end=" ")
-
-        if close > upper_band:
-            print("(Price above upper band - potential reversal or strong uptrend)")
-        elif close < lower_band:
-            print("(Price below lower band - potential reversal or strong downtrend)")
+            print("ADX: Not available")
+    except (KeyError, IndexError, AttributeError):
+        print("ADX: Not available")
+    
+    # Bollinger Bands
+    try:
+        bb_upper = data.get('bb_upper', pd.Series()).iloc[-1]
+        bb_lower = data.get('bb_lower', pd.Series()).iloc[-1]
+        close = data['close'].iloc[-1]
+        
+        if pd.notnull(bb_upper) and pd.notnull(bb_lower):
+            bb_width = (bb_upper - bb_lower) / data.get('bb_middle', pd.Series()).iloc[-1]
+            bb_position = (close - bb_lower) / (bb_upper - bb_lower) if (bb_upper - bb_lower) > 0 else 0.5
+            
+            print(f"Bollinger Bands: Width = {bb_width:.4f}", end=" ")
+            print(f"(Price at {bb_position*100:.1f}% of band range from upper band)")
         else:
-            distance_to_upper = (upper_band - close) / (upper_band - lower_band) * 100
-            print(f"(Price at {distance_to_upper:.1f}% of band range from upper band)")
-
-    # Support/Resistance Analysis
-    recent_support = data.iloc[-30:]['support'].max()
-    recent_resistance = data.iloc[-30:]['resistance'].max()
-
-    if recent_support > 0:
-        print(f"Recent Support Level: ${recent_support:.2f}")
-    if recent_resistance > 0:
-        print(f"Recent Resistance Level: ${recent_resistance:.2f}")
-
-    # Divergence Analysis
-    recent_bullish = data.iloc[-10:]['bullish_divergence'].any() if 'bullish_divergence' in data.columns else False
-    recent_bearish = data.iloc[-10:]['bearish_divergence'].any() if 'bearish_divergence' in data.columns else False
-
-    if recent_bullish:
-        print("Recent Bullish Divergence Detected!")
-    if recent_bearish:
-        print("Recent Bearish Divergence Detected!")
-
-    # Multi-timeframe Analysis
-    if 'rsi' in data.columns and 'rsi_3d' in data.columns and 'rsi_7d' in data.columns:
-        rsi_1d = last_row['rsi']
-        rsi_3d = last_row['rsi_3d']
-        rsi_7d = last_row['rsi_7d']
-
-        print(f"Multi-timeframe RSI: 1D={rsi_1d:.2f}, 3D={rsi_3d:.2f}, 7D={rsi_7d:.2f}")
-
-        if rsi_1d > rsi_3d > rsi_7d:
-            print("RSI Alignment: Short-term bullish momentum exceeding longer-term")
-        elif rsi_1d < rsi_3d < rsi_7d:
-            print("RSI Alignment: Short-term bearish momentum exceeding longer-term")
-
-    # Final analysis summary
+            print("Bollinger Bands: Not available")
+    except (KeyError, IndexError, AttributeError, ZeroDivisionError):
+        print("Bollinger Bands: Not available")
+    
+    # Support/Resistance
+    try:
+        if 'resistance_level' in data.columns and pd.notnull(data['resistance_level'].iloc[-1]):
+            resistance = data['resistance_level'].iloc[-1]
+            print(f"Recent Resistance Level: ${resistance:.2f}")
+        else:
+            print("Resistance Level: Not available")
+            
+        if 'support_level' in data.columns and pd.notnull(data['support_level'].iloc[-1]):
+            support = data['support_level'].iloc[-1]
+            print(f"Recent Support Level: ${support:.2f}")
+        else:
+            print("Support Level: Not available")
+    except (KeyError, IndexError, AttributeError):
+        print("Support/Resistance Levels: Not available")
+    
+    # Multi-timeframe RSI
+    try:
+        rsi_1d = data.get('rsi', pd.Series()).iloc[-1] if 'rsi' in data.columns else None
+        rsi_3d = data.get('rsi_3d', pd.Series()).iloc[-1] if 'rsi_3d' in data.columns else None
+        rsi_7d = data.get('rsi_7d', pd.Series()).iloc[-1] if 'rsi_7d' in data.columns else None
+        
+        if any(pd.notnull(x) for x in [rsi_1d, rsi_3d, rsi_7d]):
+            print("Multi-timeframe RSI:", end=" ")
+            rsi_parts = []
+            if pd.notnull(rsi_1d):
+                rsi_parts.append(f"1D={rsi_1d:.2f}")
+            if pd.notnull(rsi_3d):
+                rsi_parts.append(f"3D={rsi_3d:.2f}")
+            if pd.notnull(rsi_7d):
+                rsi_parts.append(f"7D={rsi_7d:.2f}")
+            print(", ".join(rsi_parts))
+        else:
+            print("Multi-timeframe RSI: Not available")
+    except (KeyError, IndexError, AttributeError):
+        print("Multi-timeframe RSI: Not available")
+    
+    # Overall trend analysis
     print("\n=== OVERALL ANALYSIS ===")
-
-    # Determine current trend
-    trend = "UNKNOWN"
-    if 'ema_8' in data.columns and 'ema_21' in data.columns:
-        ema_short = last_row['ema_8']
-        ema_medium = last_row['ema_21']
-        ema_short_prev = data['ema_8'].iloc[-2]
-        ema_medium_prev = data['ema_21'].iloc[-2]
-
-        if ema_short > ema_medium and ema_short_prev > ema_medium_prev:
-            trend = "UPTREND"
-        elif ema_short < ema_medium and ema_short_prev < ema_medium_prev:
-            trend = "DOWNTREND"
-        elif ema_short > ema_medium and ema_short_prev < ema_medium_prev:
-            trend = "POSSIBLE TREND CHANGE (Bullish crossover)"
-        elif ema_short < ema_medium and ema_short_prev > ema_medium_prev:
-            trend = "POSSIBLE TREND CHANGE (Bearish crossover)"
+    try:
+        close_prices = data['close']
+        last_10_days = close_prices.iloc[-10:]
+        
+        # Simple trend detection
+        if len(last_10_days) >= 5:
+            trend_direction = "UNDEFINED"
+            
+            # Use SMA or EMA if available for trend detection
+            if 'ema_21' in data.columns and pd.notnull(data['ema_21'].iloc[-1]):
+                if close_prices.iloc[-1] > data['ema_21'].iloc[-1] and close_prices.iloc[-5] > data['ema_21'].iloc[-5]:
+                    trend_direction = "UPTREND"
+                elif close_prices.iloc[-1] < data['ema_21'].iloc[-1] and close_prices.iloc[-5] < data['ema_21'].iloc[-5]:
+                    trend_direction = "DOWNTREND"
+                elif close_prices.iloc[-1] > data['ema_21'].iloc[-1] and close_prices.iloc[-5] < data['ema_21'].iloc[-5]:
+                    trend_direction = "REVERSAL UP"
+                elif close_prices.iloc[-1] < data['ema_21'].iloc[-1] and close_prices.iloc[-5] > data['ema_21'].iloc[-5]:
+                    trend_direction = "REVERSAL DOWN"
+            else:
+                # Simple price comparison if no moving averages
+                if close_prices.iloc[-1] > close_prices.iloc[-5]:
+                    trend_direction = "UPTREND"
+                elif close_prices.iloc[-1] < close_prices.iloc[-5]:
+                    trend_direction = "DOWNTREND"
+                
+            print(f"Current Market Trend: {trend_direction}")
         else:
-            trend = "SIDEWAYS"
-
-    print(f"Current Market Trend: {trend}")
-
+            print("Current Market Trend: Not enough data")
+    except (KeyError, IndexError, AttributeError):
+        print("Current Market Trend: Could not determine")
+    
     # Potential signals
     signals = []
 
     # RSI signals
-    if 'rsi' in data.columns:
-        if last_row['rsi'] < 30:
-            signals.append("RSI oversold (bullish)")
-        elif last_row['rsi'] > 70:
-            signals.append("RSI overbought (bearish)")
+    try:
+        if 'rsi' in data.columns and pd.notnull(data['rsi'].iloc[-1]):
+            if data['rsi'].iloc[-1] < 30:
+                signals.append("RSI oversold (bullish)")
+            elif data['rsi'].iloc[-1] > 70:
+                signals.append("RSI overbought (bearish)")
+    except (KeyError, IndexError, AttributeError):
+        pass
 
     # MACD signals
-    if 'MACD_12_26_9' in data.columns and 'MACDs_12_26_9' in data.columns:
-        macd_current = last_row['MACD_12_26_9'] - last_row['MACDs_12_26_9']
-        macd_previous = data['MACD_12_26_9'].iloc[-2] - data['MACDs_12_26_9'].iloc[-2]
+    try:
+        if 'macd' in data.columns and 'macd_signal' in data.columns:
+            macd_current = data['macd'].iloc[-1] - data['macd_signal'].iloc[-1]
+            macd_previous = data['macd'].iloc[-2] - data['macd_signal'].iloc[-2]
 
-        if macd_current > 0 and macd_previous < 0:
-            signals.append("MACD bullish crossover (bullish)")
-        elif macd_current < 0 and macd_previous > 0:
-            signals.append("MACD bearish crossover (bearish)")
+            if macd_current > 0 and macd_previous < 0:
+                signals.append("MACD bullish crossover (bullish)")
+            elif macd_current < 0 and macd_previous > 0:
+                signals.append("MACD bearish crossover (bearish)")
+    except (KeyError, IndexError, AttributeError):
+        pass
 
     # Bollinger Band signals
-    if all(col in data.columns for col in ['BBU_20_2.0', 'BBM_20_2.0', 'BBL_20_2.0']):
-        if last_row['close'] < last_row['BBL_20_2.0']:
-            signals.append("Price below lower Bollinger Band (potential bullish reversal)")
-        elif last_row['close'] > last_row['BBU_20_2.0']:
-            signals.append("Price above upper Bollinger Band (potential bearish reversal)")
+    try:
+        if 'bb_upper' in data.columns and 'bb_lower' in data.columns:
+            if data['close'].iloc[-1] < data['bb_lower'].iloc[-1]:
+                signals.append("Price below lower Bollinger Band (potential bullish reversal)")
+            elif data['close'].iloc[-1] > data['bb_upper'].iloc[-1]:
+                signals.append("Price above upper Bollinger Band (potential bearish reversal)")
+    except (KeyError, IndexError, AttributeError):
+        pass
 
     # Divergence signals
-    if recent_bullish:
-        signals.append("Bullish divergence detected (bullish)")
-    if recent_bearish:
-        signals.append("Bearish divergence detected (bearish)")
+    try:
+        if 'bullish_divergence' in data.columns and data['bullish_divergence'].iloc[-1]:
+            signals.append("Bullish divergence detected (bullish)")
+        if 'bearish_divergence' in data.columns and data['bearish_divergence'].iloc[-1]:
+            signals.append("Bearish divergence detected (bearish)")
+    except (KeyError, IndexError, AttributeError):
+        pass
 
     if signals:
         print("\nPotential Signals:")
@@ -542,11 +700,22 @@ def display_results(data: pd.DataFrame) -> None:
 
 def main():
     """Main function to execute the indicator demonstration."""
-    print("===== TECHNICAL INDICATOR DEMONSTRATION =====")
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Calculate technical indicators for a given symbol")
+    parser.add_argument("--symbol", type=str, default="BTC/USDT",
+                        help="Trading pair symbol (e.g., BTC/USDT)")
+    parser.add_argument("--days", type=int, default=120,
+                        help="Number of days of historical data to fetch")
+    parser.add_argument("--timeframe", type=str, default="1d",
+                        help="Timeframe for candles (e.g., 1d, 4h, 1h)")
+    args = parser.parse_args()
 
-    # Fetch sample market data
+    print("===== TECHNICAL INDICATOR DEMONSTRATION =====")
+    print(f"Symbol: {args.symbol}, Timeframe: {args.timeframe}, Days: {args.days}")
+
+    # Fetch market data
     print("\nFetching market data...")
-    data = fetch_sample_data(days=120)
+    data = fetch_market_data(symbol=args.symbol, days=args.days, timeframe=args.timeframe)
     print(f"Fetched {len(data)} days of data from {data.index[0].date()} to {data.index[-1].date()}")
 
     # Calculate indicators

@@ -135,7 +135,7 @@ async def run_trading_loop(config: Config, dry_run: bool = False):
     else:
         # Filter markets according to criteria
         logger.info("No specific symbols configured, applying market filter...")
-        all_symbols = exchange_service.get_symbols()
+        all_symbols = exchange_service.exchange.symbols
         symbols = market_filter.apply_all_filters(all_symbols, market_filter_config)
         logger.info(f"Market filter selected {len(symbols)} symbols for trading")
 

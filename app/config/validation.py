@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any, List, Optional, Callable
+from typing import Dict, Any, List, Callable
 from app.core.exceptions import ConfigError
 
 
@@ -38,10 +38,10 @@ class StringType(ConfigSchemaType):
     def __init__(
         self,
         required: bool = True,
-        default: Optional[str] = None,
-        min_length: Optional[int] = None,
-        max_length: Optional[int] = None,
-        regex: Optional[str] = None,
+        default: str = None,
+        min_length: int = None,
+        max_length: int = None,
+        regex: str = None,
     ):
         super().__init__(required, default)
         self.min_length = min_length
@@ -74,9 +74,9 @@ class IntegerType(ConfigSchemaType):
     def __init__(
         self,
         required: bool = True,
-        default: Optional[int] = None,
-        min_value: Optional[int] = None,
-        max_value: Optional[int] = None,
+        default: int = None,
+        min_value: int = None,
+        max_value: int = None,
     ):
         super().__init__(required, default)
         self.min_value = min_value
@@ -105,9 +105,9 @@ class FloatType(ConfigSchemaType):
     def __init__(
         self,
         required: bool = True,
-        default: Optional[float] = None,
-        min_value: Optional[float] = None,
-        max_value: Optional[float] = None,
+        default: float = None,
+        min_value: float = None,
+        max_value: float = None,
     ):
         super().__init__(required, default)
         self.min_value = min_value
@@ -153,9 +153,9 @@ class ListType(ConfigSchemaType):
         self,
         item_type: ConfigSchemaType,
         required: bool = True,
-        default: Optional[List[Any]] = None,
-        min_length: Optional[int] = None,
-        max_length: Optional[int] = None,
+        default: List[Any] = None,
+        min_length: int = None,
+        max_length: int = None,
     ):
         super().__init__(required, default if default is not None else [])
         self.item_type = item_type
@@ -192,7 +192,7 @@ class DictType(ConfigSchemaType):
         self,
         schema: Dict[str, ConfigSchemaType],
         required: bool = True,
-        default: Optional[Dict[str, Any]] = None,
+        default: Dict[str, Any] = None,
         additional_properties: bool = False,
     ):
         super().__init__(required, default if default is not None else {})
@@ -258,7 +258,7 @@ class AnyType(ConfigSchemaType):
 
     def __init__(
         self,
-        validator: Optional[Callable[[Any, str], Any]] = None,
+        validator: Callable[[Any, str], Any] = None,
         required: bool = True,
         default: Any = None,
     ):
@@ -304,21 +304,21 @@ def timeframe_schema(required: bool = True) -> EnumType:
 
 app_schema = DictType(
     {
-        "name": StringType(required=True),
+        "name": StringType(required=False, default="Crypto Trading Bot"),
+        "exchange_id": StringType(required=True),
+        "strategy_name": StringType(required=True),
         "log_level": EnumType(
             ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"], required=False, default="INFO"
         ),
-        "strategy": StringType(required=True),
     }
 )
 
-exchanges_schema = DictType({}, additional_properties=True)  # Dynamic keys for exchanges
-
 data_collection_schema = DictType(
     {
-        "symbol_match_patterns": ListType(StringType(), required=True, min_length=1),
-        "symbol_exclude_patterns": ListType(StringType(), required=True, min_length=1),
-        "enabled": BooleanType(required=False, default=True),
+        "symbols": ListType(StringType(), required=False, min_length=1),
+        "symbol_match_patterns": ListType(StringType(), required=False, min_length=1),
+        "symbol_exclude_patterns": ListType(StringType(), required=False, min_length=1),
+        "store_ohlcv": BooleanType(required=False, default=False),
         "interval": IntegerType(required=False, default=60, min_value=1),
         "timeframes": ListType(timeframe_schema(), required=True, min_length=1),
     }
@@ -352,18 +352,26 @@ exit_conditions_schema = ListType(
 
 position_management_schema = DictType(
     {
-        "stake_amount": FloatType(required=True),
-        "max_drawdown_percent": FloatType(required=True),
+        "account_balance": FloatType(required=True),
+        "max_amount": FloatType(required=True),
+        "risk_per_trade": FloatType(required=True),
+        "max_open_positions": IntegerType(required=True),
         "stop_loss_percent": FloatType(required=True),
-        "trailing_stop": BooleanType(required=True),
-        "trailing_stop_percent": FloatType(required=True),
+        "trailing_stop_percent": FloatType(required=False),
+        "take_profit": DictType(
+            {
+                "type": StringType(required=True),
+                "targets": ListType(
+                    DictType({"target": FloatType(required=True), "percentage": FloatType(required=True)}),
+                ),
+            }
+        ),
     }
 )
 
 root_schema = DictType(
     {
         "app": app_schema,
-        "exchanges": exchanges_schema,
         "data_collection": data_collection_schema,
         "entry_conditions": entry_conditions_schema,
         "exit_conditions": exit_conditions_schema,
@@ -384,10 +392,6 @@ def validate_config(config: Dict[str, Any]) -> Dict[str, Any]:
 
 def validate_app_config(config: Dict[str, Any]) -> Dict[str, Any]:
     return app_schema.validate(config, "app")
-
-
-def validate_exchanges_config(config: Dict[str, Any]) -> Dict[str, Any]:
-    return exchanges_schema.validate(config, "exchanges")
 
 
 def validate_data_collection_config(config: Dict[str, Any]) -> Dict[str, Any]:

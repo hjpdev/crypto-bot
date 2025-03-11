@@ -21,66 +21,35 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.services.exchange_service import ExchangeService
 from app.services.market_filter import MarketFilter
 
-# Set up logger
 logger = logging.getLogger(__name__)
 
 def load_config(config_path: str) -> Dict[str, Any]:
-    """
-    Load configuration from YAML file.
-
-    Args:
-        config_path: Path to the config file
-
-    Returns:
-        Dictionary containing configuration
-    """
     with open(config_path, 'r') as config_file:
         return yaml.safe_load(config_file)
 
 
 def setup_exchange(exchange_id: str, config: Dict[str, Any]) -> ExchangeService:
-    """
-    Setup an exchange service based on configuration.
-
-    Args:
-        exchange_id: ID of the exchange to use
-        config: Configuration dictionary
-
-    Returns:
-        Configured ExchangeService
-    """
-    exchange_config = config["exchanges"].get(exchange_id, {})
-
     return ExchangeService(
         exchange_id=exchange_id,
-        api_key=exchange_config.get("api_key"),
-        secret=exchange_config.get("api_secret"),
-        password=exchange_config.get("password"),
-        sandbox=exchange_config.get("test_mode", True),
+        # @TODO: Add API key and secret
+        # api_key=exchange_config.get("api_key"),
+        # secret=exchange_config.get("api_secret"),
+        # password=exchange_config.get("password"),
+        # sandbox=exchange_config.get("test_mode", True),
         timeout=30000,
         enableRateLimit=True,
     )
 
 
-def filter_markets(exchange: ExchangeService, filter_config: Dict[str, Any]) -> Tuple[List[str], Dict[str, List[str]]]:
-    """
-    Filter markets based on the configuration.
-
-    Args:
-        exchange: Exchange service to fetch market data
-        filter_config: Filtering configuration dict
-
-    Returns:
-        Tuple of (filtered symbols list, rejection reasons by filter)
-    """
-    market_filter = MarketFilter(exchange)
+def filter_markets(exchange_service: ExchangeService, filter_config: Dict[str, Any]) -> Tuple[List[str], Dict[str, List[str]]]:
+    market_filter = MarketFilter(exchange_service)
     rejection_reasons = {}
 
     # Get all available symbols
     logger.info("Fetching available markets...")
     try:
-        symbols = exchange.get_symbols()
-        logger.info(f"Found {len(symbols)} markets on {exchange.exchange_id}")
+        symbols = exchange_service.exchange.symbols
+        logger.info(f"Found {len(symbols)} markets on {exchange_service.exchange_id}")
     except Exception as e:
         logger.error(f"Error fetching markets: {str(e)}")
         return [], {}
@@ -91,7 +60,6 @@ def filter_markets(exchange: ExchangeService, filter_config: Dict[str, Any]) -> 
     # Apply all filters at once using the MarketFilter service
     filtered_symbols = market_filter.apply_all_filters(symbols, filter_config)
 
-    # Calculate rejected symbols for each filter type to maintain reporting
     for filter_type in ['quote', 'market_cap', 'volume', 'spread', 'volatility']:
         # Skip filters not specified in the config
         if filter_type == 'quote' and 'allowed_quotes' not in filter_config:

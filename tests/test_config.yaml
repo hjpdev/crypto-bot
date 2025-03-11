@@ -1,17 +1,15 @@
 app:
-  name: "Crypto Trading Bot"
+  exchange_id: "kraken"
+  strategy_name: "momentum"
   log_level: "INFO"
-  strategy: "momentum"
-
-exchanges:
-  kraken:
-    enabled: true
-    base_url: "https://api.kraken.com"
-    api_key: "YOUR_API_KEY"
-    api_secret: "YOUR_API_SECRET"
-    test_mode: true
 
 data_collection:
+  symbols:
+    - "BTC/USD"
+    - "ETH/USD"
+    - "XRP/USD"
+    - "BTC/USDT"
+    - "ETH/USDT"
   symbol_match_patterns:
     - "/USD"
     - "/USDT"
@@ -21,47 +19,57 @@ data_collection:
     - "BEAR"
     - "UP"
     - "DOWN"
-  enabled: true
-  interval: 60  # Seconds
   timeframes:
     - "1m"
     - "5m"
     - "15m"
-    - "1h"
-    - "4h"
-    - "1d"
+    # - "1h"
+    # - "4h"
+    # - "1d"
+  store_ohlcv: false
+  interval: 60
 
 entry_conditions:
   - indicator: rsi
     value: 30
     operator: "<"
-    timeframe: "1h"
+    timeframe: "5m"
   - indicator: macd
     value: 0
     operator: ">"
-    timeframe: "1h"
+    timeframe: "5m"
   - indicator: bollinger_bands
     value: 20
     operator: "<"
-    timeframe: "1h"
+    timeframe: "5m"
 
 exit_conditions:
   - indicator: rsi
     value: 70
     operator: ">"
-    timeframe: "1h"
+    timeframe: "5m"
   - indicator: macd
     value: 0
     operator: "<"
-    timeframe: "1h"
+    timeframe: "5m"
   - indicator: bollinger_bands
     value: 20
     operator: "<"
-    timeframe: "1h"
+    timeframe: "5m"
 
 position_management:
-  stake_amount: 100
-  max_drawdown_percent: 5
+  account_balance: 10000.0
+  max_amount: 100
+  risk_per_trade: 2.0
+  max_open_positions: 5
   stop_loss_percent: 2.5
-  trailing_stop: true
   trailing_stop_percent: 1.0
+  take_profit:
+    type: "fixed_percentage"
+    targets:
+      - target: 1.5
+        percentage: 20
+      - target: 2.5
+        percentage: 25
+      - target: 3.0
+        percentage: 30 # The remaining 25% runs with a trailing stop.

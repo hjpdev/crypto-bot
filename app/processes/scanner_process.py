@@ -173,7 +173,7 @@ class ScannerProcess(BaseProcess):
             self.logger.info("Fetching and filtering eligible markets")
 
             # Get all available symbols
-            all_symbols = self.exchange_service.get_symbols()
+            all_symbols = self.exchange_service.exchange.symbols
 
             if not all_symbols:
                 self.logger.warning("No symbols returned from exchange")
